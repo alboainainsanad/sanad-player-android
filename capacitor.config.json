@@ -1,0 +1,8 @@
+{
+  "appId": "com.sanad.player",
+  "appName": "Sanad Player",
+  "webDir": "www",
+  "server": { "androidScheme": "http", "cleartext": true },
+  "android": { "allowMixedContent": true, "backgroundColor": "#0a0c0f" },
+  "plugins": { "CapacitorHttp": { "enabled": true } }
+}
