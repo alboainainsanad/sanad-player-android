@@ -593,6 +593,14 @@ function ffAttach(start){const v=V();killEngine();const tok=S.playTok=(S.playTok
     p.attachMediaElement(v);p.load();p.on(mpegts.Events.ERROR,()=>{if(tok===S.playTok)showOvl('verr')});v._eng=p;clearInterval(FF.baseT);FF.baseT=setInterval(()=>{if(tok!==S.playTok){clearInterval(FF.baseT);return}try{const r=p._transmuxer&&p._transmuxer._controller&&p._transmuxer._controller._remuxer;if(r&&r._dtsBaseInited&&r._dtsBase>=0){FF.off=r._dtsBase/1000;clearInterval(FF.baseT);updSeek()}}catch(e){}},150);v.onerror=()=>{if(tok===S.playTok)showOvl('verr')};
     v.play().catch(()=>{});if(!FF.dur&&S.vod){probeItem({key:S.vod.key,url:S.vod.url}).then(i=>{if(i&&i.d&&tok===S.playTok){FF.dur=i.d;updSeek()}}).catch(()=>{})}});
   ENH.start()}
+/* video running but not one byte of audio decoded after a few seconds → the codec isn't supported here; re-route through ffmpeg (→ AAC) */
+function audioWatch(tok,url,live,start){if(!ffAvail()||live)return;let n=0;const t=setInterval(()=>{const v=V();if(tok!==S.playTok||FF.on){clearInterval(t);return}
+  if(v.paused||v.readyState<3||!v.videoWidth||v.currentTime<(start||0)+1.5)return;if(++n<3)return;clearInterval(t);
+  const dec=v.webkitAudioDecodedByteCount;if(dec===undefined||dec>0)return;
+  const o=S.vod;const tr=o&&(S.tracks[o.key]||{});if(tr&&tr.a&&tr.a.length===0)return;   // truly silent file
+  console.warn('no audio decoded → ffmpeg');toast(L('🔊 صيغة الصوت غير مدعومة — جاري تحويل الصوت…','🔊 Audio codec unsupported — converting audio…'),2500);
+  const keep=S.sub;ffStart(url,v.currentTime||start||0,null,tr&&tr.d||0);if(o)subsReattach(o,keep)},1500)}
+function subsReattach(o,keep){if(keep&&keep.kind==='ext'&&!(keep.meta&&keep.meta.ff)){S.sub={kind:'ext',cues:keep.cues,meta:keep.meta,offset:keep.offset||0,lastKey:''};S.subCtx=S.subCtx||{o,list:null,state:'idle'};subLoopStart()}else subsStart(o)}
 function ffStart(url,start,aIdx,dur){FF.src=url;FF.aIdx=aIdx==null?null:aIdx;FF.dur=dur||FF.dur||0;S.curUrl=url;ffAttach(start||0)}
 function playUrl(url,{live=true,start=0,ff=null}={}){
   const v=V();stopEngine();if(ff&&ffAvail()){ffStart(url,start,ff.aIdx,ff.dur);return}const tok=S.playTok=(S.playTok||0)+1;S.curUrl=url;showOvl('load');
@@ -613,6 +621,7 @@ function playUrl(url,{live=true,start=0,ff=null}={}){
   else{if(live&&H)useHls();else v.src=url}
   v.onerror=fail;v.style.objectFit=S.settings.aspect;
   if(start>0){const f=()=>{try{v.currentTime=start}catch(e){}v.removeEventListener('loadedmetadata',f)};v.addEventListener('loadedmetadata',f)}
+  audioWatch(tok,url,live,start);
   const pr=v.play();if(pr&&pr.catch)pr.catch(err=>{if(tok!==S.playTok)return;if(err&&err.name==='NotAllowedError'){v.muted=true;S.autoMuted=true;v.play().catch(()=>{});toast(L('بدأ التشغيل بدون صوت — اضغط في أي مكان لتشغيل الصوت','Playing muted — click anywhere to turn the sound on'))}});
   ENH.start();
 }
@@ -721,7 +730,7 @@ const ANIME_RX=/anime|animation|أنمي|انمي|انيمي|أنيمي|انيم
 function isAnime(it){if(!it)return false;const k=it.kind==='movie'?'movies':it.kind==='series'?'series':'live';const g=it.group||'';const ov=(S.anime[S.active]||{})[k]||{};if(ov[g]!==undefined)return !!ov[g];return ANIME_RX.test(g)}
 function prefAudio(o){if(!o)return'';if(S.settings.animeJa!==false&&(o.anime||isAnime(o)||isAnime(o.probeRef)))return'ja';return S.settings.audioLang||''}
 const extOf=u=>((String(u||'').split('?')[0].match(/\.([a-z0-9]{2,5})$/i)||[])[1]||'').toLowerCase();
-const BAD_AUDIO=/^(ac3|eac3|dts|truehd|mlp|dca|pcm_s24le|pcm_s16le|flac|alac|wmav2|wmapro|cook)$/;
+const BAD_AUDIO=/^(ac3|eac3|ac4|dts|dtshd|truehd|mlp|dca|pcm_|flac|alac|wma|cook|atrac|ape|tta|mp2$|adpcm_)/;
 function ffPlan(o){if(!ffAvail()||!o||!o.url)return null;const ext=extOf(o.url);if(ext==='m3u8'||ext==='ts')return null;
   const t=S.tracks[o.key]||S.tracks[o.baseKey||'']||(o.probeRef?S.tracks[o.probeRef.key]:null);
   if(o.forceAudio!=null)return{aIdx:o.forceAudio,dur:t?t.d:0};
@@ -1326,7 +1335,8 @@ function playVod(o){
   const go=()=>{if(S.vod!==o)return;o.ffTried=false;playUrl(o.url,{live:false,start:o.start||0,ff:ffPlan(o)});subsStart(o)};
   syncStage();showUI();if(S.settings.autoFs&&!fsEl())reqFs();
   if(o.local){stopEngine();playUrl(o.url,{live:false,start:o.start||0});S.saveT=setInterval(saveResume,5000);return}
-  if(ffAvail()&&prefAudio(o)&&S.tracks[o.key]===undefined&&!['m3u8','ts'].includes(extOf(o.url))){stopEngine();showOvl('load');Promise.race([probeItem({key:o.key,url:o.url}),new Promise(r=>setTimeout(r,7000))]).catch(()=>null).then(go)}else go();
+  go();
+  if(ffAvail()&&S.tracks[o.key]===undefined&&!['m3u8','ts'].includes(extOf(o.url))){probeItem({key:o.key,url:o.url}).catch(()=>null).then(t=>{if(S.vod!==o||FF.on||!t)return;const plan=ffPlan(o);if(plan){const at=curT()||o.start||0;console.warn('audio needs ffmpeg → switching',t.a&&t.a[0]&&t.a[0].c);const keep=S.sub;playUrl(o.url,{live:false,start:at,ff:plan});subsReattach(o,keep)}})}
   S.saveT=setInterval(saveResume,5000)}
 function closeVod(silent){saveResume();clearInterval(S.saveT);clearTimeout(S.nextT);stopEngine();S.vod=null;S.side=null;renderSide();if(!silent){if(fsEl())exitFs();syncStage();render()}}
 function saveResume(){const o=S.vod;if(!o||!o.key)return;if(isNT(o.key)||(o.baseKey&&isNT(o.baseKey))||(o.seriesKey&&isNT(o.seriesKey)))return;const v=V();const d=durT();const ct=curT();if(!isFinite(d)||d<60||ct<5)return;
