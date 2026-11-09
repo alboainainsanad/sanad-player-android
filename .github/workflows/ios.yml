@@ -1,0 +1,53 @@
+name: Build Sanad Player iOS
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ['ios/**', '.github/workflows/ios.yml']
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app || true; xcodebuild -version
+      - name: Install Capacitor
+        run: npm ci && npx cap sync ios
+      - name: Build for simulator
+        run: |
+          set -o pipefail
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim \
+            CODE_SIGNING_ALLOWED=NO build 2>&1 | tee sim.log | grep -E "error:|warning: .*Sanad|SP[A-Z]|BUILD" || true
+          test -d build/sim/Build/Products/Debug-iphonesimulator/App.app
+      - name: Build for device (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath build/dev \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build 2>&1 | tee dev.log | grep -E "error:|BUILD" || true
+          test -d build/dev/Build/Products/Release-iphoneos/App.app
+          mkdir -p Payload && cp -R build/dev/Build/Products/Release-iphoneos/App.app Payload/ && zip -qry SanadPlayer-unsigned.ipa Payload
+      - name: Run in simulator and screenshot
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c "import json,sys;d=json.load(sys.stdin)['devices'];print([x['udid'] for k,v in d.items() if 'iOS' in k for x in v if 'iPhone 16' in x['name']][0])")
+          xcrun simctl boot "$UDID"; sleep 20
+          xcrun simctl install "$UDID" build/sim/Build/Products/Debug-iphonesimulator/App.app
+          xcrun simctl launch "$UDID" com.sanad.player; sleep 25
+          xcrun simctl io "$UDID" screenshot shot1.png
+          xcrun simctl spawn "$UDID" log show --last 2m --predicate 'process == "App"' --style compact > sim-app.log 2>&1 || true
+          grep -iE "error|exception|fatal|SanadPlayer" sim-app.log | tail -40 || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-build
+          path: |
+            SanadPlayer-unsigned.ipa
+            shot1.png
+            sim.log
+            dev.log
+            sim-app.log
