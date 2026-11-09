@@ -9,6 +9,49 @@ final class SPPlayerViewController: UIViewController, AVPlayerItemLegibleOutputP
     var item: AVPlayerItem?
     var videoOut: AVPlayerItemVideoOutput?
     var legibleOut: AVPlayerItemLegibleOutput?
+    // machine translation of embedded subtitles → Arabic (Google gtx, cached)
+    var mtOn = false
+    var mtCache: [String: String] = [:]
+    var mtPending = Set<String>()
+    var curCue = ""
+    var mtGroup: AVMediaSelectionGroup?
+
+    func mtTranslate(_ text: String, done: @escaping (String?) -> Void) {
+        var c = URLComponents(string: "https://translate.googleapis.com/translate_a/single")!
+        c.queryItems = [URLQueryItem(name: "client", value: "gtx"), URLQueryItem(name: "sl", value: "auto"), URLQueryItem(name: "tl", value: "ar"), URLQueryItem(name: "dt", value: "t"), URLQueryItem(name: "q", value: text)]
+        guard let u = c.url else { done(nil); return }
+        URLSession.shared.dataTask(with: u) { d, _, _ in
+            guard let d = d, let j = try? JSONSerialization.jsonObject(with: d) as? [Any], let segs = j.first as? [Any] else { done(nil); return }
+            let out = segs.compactMap { ($0 as? [Any])?.first as? String }.joined()
+            done(out.isEmpty ? nil : out)
+        }.resume()
+    }
+
+    func showMt(_ raw: String) {
+        let k = raw.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression).trimmingCharacters(in: .whitespacesAndNewlines)
+        curCue = k
+        if k.isEmpty { subtitleL.text = nil; return }
+        if let hit = mtCache[k] { subtitleL.text = " " + hit + " "; return }
+        if mtPending.contains(k) { return }
+        mtPending.insert(k)
+        mtTranslate(k) { [weak self] r in DispatchQueue.main.async {
+            guard let s = self else { return }
+            s.mtPending.remove(k)
+            if let r = r { s.mtCache[k] = r; if s.curCue == k { s.subtitleL.text = " " + r + " " } }
+        } }
+    }
+
+    /// called by the web layer: pick the embedded non-Arabic subtitle and translate it live
+    func useMt() {
+        guard !live, let it = item, let leg = mtGroup else { return }
+        let o = leg.options.first(where: { ($0.extendedLanguageTag ?? $0.locale?.identifier ?? "").lowercased().hasPrefix("en") }) ?? leg.options.first
+        guard let opt = o else { return }
+        it.select(opt, in: leg)
+        extCues = []
+        mtOn = true
+        badgeExtra = "🤖 ترجمة عربية آلية ← " + opt.displayName
+        updateBadge()
+    }
     let mtk = MTKView()
     var renderer: SPEnhanceRenderer?
     var link: CADisplayLink?
@@ -278,13 +321,15 @@ final class SPPlayerViewController: UIViewController, AVPlayerItemLegibleOutputP
             if acts.count > 1 { menuActions.append(UIMenu(title: "الصوت", options: .displayInline, children: acts)) }
         }
         if let leg = try? await asset.loadMediaSelectionGroup(for: .legible) {
+            mtGroup = leg
             let ps = str("prefSub", "ar")
             if let o = leg.options.first(where: { ($0.extendedLanguageTag ?? $0.locale?.identifier ?? "").lowercased().hasPrefix(ps) }) {
                 hasAr = true
                 it.select(o, in: leg)
             }
             var acts: [UIMenuElement] = [UIAction(title: "إيقاف الترجمة المدمجة") { [weak self] _ in it.select(nil, in: leg); self?.subtitleL.text = nil }]
-            acts += leg.options.map { o in UIAction(title: "💬 " + o.displayName) { [weak self] _ in it.select(o, in: leg); self?.extCues = [] } }
+            acts += leg.options.map { o in UIAction(title: "💬 " + o.displayName) { [weak self] _ in it.select(o, in: leg); self?.extCues = []; self?.mtOn = false } }
+            if !leg.options.isEmpty { acts.append(UIAction(title: "🤖 ترجم المدمجة للعربي") { [weak self] _ in self?.useMt() }) }
             menuActions.append(UIMenu(title: "الترجمة", options: .displayInline, children: acts))
         }
         do {
@@ -295,7 +340,7 @@ final class SPPlayerViewController: UIViewController, AVPlayerItemLegibleOutputP
             if !live && !askedSubs {
                 askedSubs = true
                 if hasAr { badgeExtra = "💬 ترجمة عربية مدمجة" }
-                else if extCues.isEmpty { SanadNativePlugin.shared?.emit("needSubs", ["key": str("key")]) }
+                else if extCues.isEmpty { SanadNativePlugin.shared?.emit("needSubs", ["key": str("key"), "hasOther": !(mtGroup?.options.isEmpty ?? true)]) }
             }
         }
     }
@@ -304,6 +349,7 @@ final class SPPlayerViewController: UIViewController, AVPlayerItemLegibleOutputP
     func legibleOutput(_ output: AVPlayerItemLegibleOutput, didOutputAttributedStrings strings: [NSAttributedString], nativeSampleBuffers nativeSamples: [Any], forItemTime itemTime: CMTime) {
         guard extCues.isEmpty else { return }
         let t = strings.map { $0.string }.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        if mtOn { showMt(t); return }
         subtitleL.text = t.isEmpty ? nil : " " + t + " "
     }
 
@@ -311,6 +357,7 @@ final class SPPlayerViewController: UIViewController, AVPlayerItemLegibleOutputP
     func addExternalSub(text: String, label: String, key: String) {
         guard !live, key == str("key") else { return }
         extCues = SPPlayerViewController.parseSrt(text)
+        mtOn = false
         extLabel = label
         badgeExtra = "💬 ترجمة عربية: " + label
     }

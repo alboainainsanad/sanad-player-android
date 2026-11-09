@@ -59,6 +59,7 @@ dependencies {
     implementation "androidx.media3:media3-ui:$media3"
     implementation "androidx.media3:media3-effect:$media3"
     implementation "org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1"
+    implementation "com.google.mlkit:translate:17.0.3"
     implementation "androidx.core:core:$androidxCoreVersion"
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"

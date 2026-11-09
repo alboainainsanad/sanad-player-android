@@ -399,7 +399,7 @@ const idb={db:null,
 };
 const S={
   playlists:store.get('playlists',[]),active:store.get('active',null),
-  settings:Object.assign({fmt:'m3u8',tmdb:'',epgShift:0,clock24:false,autoplay:true,autoFs:true,aspect:'contain',enh:'auto',motion:'light',audioLang:'',maxq:true,subAuto:true,subLang:'ar',subSize:'m',subBg:false,subColor:'#ffffff',subdl:'',pin:'',autoProbe:true,animeJa:true,enhLive:true,enhMovies:true,enhSeries:true,setupDone:false,vf:{}},store.get('settings',{})),
+  settings:Object.assign({fmt:'m3u8',tmdb:'',epgShift:0,clock24:false,autoplay:true,autoFs:true,aspect:'contain',enh:'auto',motion:'light',audioLang:'',maxq:true,subAuto:true,subLang:'ar',subSize:'m',subBg:false,subColor:'#ffffff',subdl:'',pin:'',autoProbe:true,forceAr:true,mtEngine:'auto',speechSubs:true,animeJa:true,enhLive:true,enhMovies:true,enhSeries:true,setupDone:false,vf:{}},store.get('settings',{})),
   favs:new Set(store.get('favs',[])),pfavs:new Set(store.get('pfavs',[])),unlocked:false,tracks:store.get('tracks',{}),anime:store.get('anime',{}),locks:store.get('locks',{}),noTrack:new Set(store.get('noTrack',[])),dls:store.get('dls',[]),recents:store.get('recents',[]),resume:store.get('resume',{}),hidden:store.get('hidden',{}),
   live:[],movies:[],series:[],epg:{},epgNames:{},info:null,serverTz:null,gOrder:null,meta:{},idx:null,qsel:{},subsFound:{},
   screen:'tv',cur:null,stack:[],
@@ -810,12 +810,53 @@ function subShift(d){if(!S.sub||S.sub.kind!=='ext'){toast(L('شغّل ترجمة
 function cycleSubSize(){const K=Object.keys(SUBSZ);S.settings.subSize=K[(K.indexOf(S.settings.subSize)+1)%K.length];saveSet();applySubStyle()}
 async function loadCandidate(c,silent){ffSubStop();const o=S.vod;const txt=await fetchSubText(c,o&&o.subSeason,o&&o.subEp);const cues=parseSubs(txt);if(cues.length<3)throw new Error('few');if(o&&S.vod!==o)return;
   setCues(cues,{src:c.src,lang:c.lang,label:`${langName(c.lang)} · ${c.src}`,cand:c});toast(L('✓ تم تشغيل الترجمة: ','✓ Subtitles on: ')+`${langName(c.lang)} (${c.src})`,2600)}
+
+/* ================= Forced Arabic: machine-translate any subtitle, or generate from speech ================= */
+const MT={cache:new Map(),pend:new Map(),seq:0,hooked:false};
+function mtHook(){if(MT.hooked||!isApp()||!window.sanad.onAi)return;MT.hooked=true;window.sanad.onAi(d=>{
+  if(d.type==='translated'||d.type==='mtError'){const p=MT.pend.get(d.req);if(p){MT.pend.delete(d.req);d.type==='translated'?p.res(d.out):p.rej(new Error(d.error||'mt'))}}
+  else if(d.type==='speechCues')speechOnCues(d);else if(d.type==='speechState')speechOnState(d)})}
+function localMT(lines,from){mtHook();return new Promise((res,rej)=>{const req='t'+(++MT.seq);MT.pend.set(req,{res,rej});window.sanad.aiCmd({type:'translate',lines,from:from||'en',req});setTimeout(()=>{if(MT.pend.has(req)){MT.pend.delete(req);rej(new Error('timeout'))}},180000)})}
+async function gtx(lines,from){const out=[];let chunk=[],len=0;const flush=async()=>{if(!chunk.length)return;const q=chunk.join('\n');
+    const r=await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from&&from!=='und'?from:'auto'}&tl=ar&dt=t`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:'q='+encodeURIComponent(q)});
+    if(!r.ok)throw new Error('gtx '+r.status);const j=await r.json();const txt=(j[0]||[]).map(x=>x[0]).join('');let parts=txt.split('\n');
+    if(parts.length!==chunk.length){parts=[];for(const l of chunk){const r2=await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=ar&dt=t&q=${encodeURIComponent(l)}`);const j2=await r2.json();parts.push((j2[0]||[]).map(x=>x[0]).join(''))}}
+    out.push(...parts);chunk=[];len=0};
+  for(const l of lines){if(len+l.length>1800)await flush();chunk.push(l);len+=l.length+1}await flush();return out}
+async function mtLines(lines,from){const todo=[],idx=[];const res=lines.map((l,i)=>{const k=from+'|'+l;if(MT.cache.has(k))return MT.cache.get(k);todo.push(l);idx.push(i);return null});
+  if(todo.length){let out=null;const eng=S.settings.mtEngine||'auto';
+    const canLocal=isApp()&&(from==='en'||!from||from==='und');
+    if(canLocal&&eng==='device'){try{out=await localMT(todo,'en')}catch(e){console.warn('local mt',e)}}
+    if(!out&&eng!=='device'){try{out=await gtx(todo,from)}catch(e){console.warn('gtx',e)}}
+    if(!out&&canLocal&&eng!=='device'){try{out=await localMT(todo,'en')}catch(e){console.warn('local mt',e)}}
+    if(!out)throw new Error('mt-failed');out.forEach((t,j)=>{MT.cache.set(from+'|'+todo[j],t);res[idx[j]]=t})}
+  return res}
+/* translate the cues of the active subtitle in place: around the playhead first, then onwards */
+async function arabize(sub,from){if(!sub||sub.mt)return;sub.mt={from:from||'en',done:new Set(),busy:false,fail:0};sub.meta.label='🤖 '+L('عربي (ترجمة آلية) ← ','Arabic (machine) ← ')+lname(from||'en');sub.meta.lang='ar';
+  if(S.pm||S.vod)renderBars();toast(L('🤖 ما فيه ترجمة عربية — جاري ترجمة ','🤖 No Arabic subtitles — translating ')+lname(from||'en')+L(' للعربي تلقائياً',' to Arabic automatically'),3000);
+  const step=async()=>{if(S.sub!==sub||sub.mt.busy)return;const cs=sub.cues;if(!cs.length){setTimeout(step,800);return}
+    const t=curT();let i0=cs.findIndex(c=>c.en>=t-2);if(i0<0)i0=0;const pick=[];for(let i=i0;i<cs.length&&pick.length<40;i++)if(!sub.mt.done.has(i))pick.push(i);
+    if(pick.length<40)for(let i=0;i<i0&&pick.length<40;i++)if(!sub.mt.done.has(i))pick.push(i);
+    if(!pick.length){setTimeout(step,1500);return}
+    sub.mt.busy=true;try{const src=pick.map(i=>cs[i].orig||cs[i].text);const tr=await mtLines(src.map(x=>String(x).replace(/<[^>]+>/g,'').replace(/\s*\n\s*/g,' ').trim()),sub.mt.from);
+      if(S.sub!==sub)return;pick.forEach((i,j)=>{if(!cs[i].orig)cs[i].orig=cs[i].text;cs[i].text=tr[j]||cs[i].text;sub.mt.done.add(i)});sub.lastKey='';sub.mt.fail=0}
+    catch(e){sub.mt.fail++;if(sub.mt.fail===3)toast(L('تعذّرت الترجمة الآلية حالياً (تحقق من الإنترنت) — يعرض الترجمة الأصلية','Machine translation failed (check internet) — showing original subtitles'),4000)}
+    finally{sub.mt.busy=false}setTimeout(step,sub.mt.fail?Math.min(30000,3000*sub.mt.fail):150)};step()}
+/* speech → Arabic subtitles (Mac: Whisper on the GPU, then translation) */
+const SP={id:null,from:0,to:0};
+function speechStart(o,at){if(!isApp()||!S.settings.speechSubs)return false;mtHook();const id='sp'+Date.now();SP.id=id;SP.from=at;SP.to=at;
+  S.sub={kind:'ext',cues:[],meta:{src:'AI',lang:'ar',label:'🤖 '+L('عربي (من الصوت · آلي)','Arabic (from speech · AI)'),speech:true},offset:0,lastKey:'',speech:id};subLoopStart();if(S.pm||S.vod)renderBars();
+  window.sanad.aiCmd({type:'speech',id,url:o.url,start:Math.max(0,at-1),mtEngine:S.settings.mtEngine||'auto'});
+  toast(L('🤖 ما فيه أي ترجمة لهذا العمل — جاري توليد ترجمة عربية من الصوت (أول مرة ينزل محرك التعرّف على الكلام)','🤖 No subtitles at all — generating Arabic subtitles from the audio (first time downloads the speech model)'),5000);
+  clearInterval(SP.watch);SP.watch=setInterval(()=>{if(!S.sub||S.sub.speech!==id){clearInterval(SP.watch);window.sanad.aiCmd({type:'speechStop',id});return}const t=curT();if(t<SP.from-2||t>SP.to+90){window.sanad.aiCmd({type:'speechStop',id});const nid='sp'+Date.now();SP.id=nid;S.sub.speech=nid;SP.from=t;SP.to=t;window.sanad.aiCmd({type:'speech',id:nid,url:o.url,start:Math.max(0,t-1),mtEngine:S.settings.mtEngine||'auto'})}},2000);return true}
+function speechOnCues(d){if(!S.sub||S.sub.speech!==d.id)return;const cs=S.sub.cues;for(const c of d.cues)cs.push(c);cs.sort((a,b)=>a.st-b.st);S.sub.lastKey='';SP.to=Math.max(SP.to,d.to||0)}
+function speechOnState(d){if(!S.sub||S.sub.speech!==d.id)return;if(d.state==='model')S.sub.meta.label='🤖 '+L('تنزيل محرك الكلام… ','Downloading speech model… ')+(d.pct!=null?arN(Math.round(d.pct))+'٪':'');else if(d.state==='run')S.sub.meta.label='🤖 '+L('عربي (من الصوت · آلي)','Arabic (from speech · AI)');else if(d.state==='error'){toast(L('تعذّر توليد الترجمة من الصوت: ','Speech subtitles failed: ')+(d.error||''),5000)}if(S.pm||S.vod)renderBars()}
 let ffJob=0;
 function ffSubStop(){if(S.ffId&&isApp())window.sanad.subStop(S.ffId);S.ffId=null}
-function useFfSub(o,st){const id='ff'+(++ffJob);ffSubStop();S.ffId=id;let buf='',n=0;S.sub={kind:'ext',cues:[],meta:{src:L('مدمجة','Embedded'),lang:st.l,label:L('مدمجة: ','Embedded: ')+lname(st.l)+(st.t?' · '+st.t:''),ff:st.i},offset:0,lastKey:''};subLoopStart();if(S.pm||S.vod)renderBars();
-  let timer=null;const flush=()=>{timer=null;if(S.vod!==o||!S.sub||S.sub.meta.ff!==st.i)return;const cues=parseSubs(buf);if(cues.length!==n){n=cues.length;S.sub.cues=cues;S.sub.lastKey=''}};
+function useFfSub(o,st,mt){const id='ff'+(++ffJob);ffSubStop();S.ffId=id;let buf='',n=0;S.sub={kind:'ext',cues:[],meta:{src:L('مدمجة','Embedded'),lang:st.l,label:L('مدمجة: ','Embedded: ')+lname(st.l)+(st.t?' · '+st.t:''),ff:st.i},offset:0,lastKey:''};subLoopStart();if(S.pm||S.vod)renderBars();
+  let timer=null;const flush=()=>{timer=null;if(S.vod!==o||!S.sub||S.sub.meta.ff!==st.i)return;const cues=parseSubs(buf);if(cues.length!==n){n=cues.length;const old=S.sub.cues;cues.forEach((c,i)=>{if(old[i]&&old[i].orig&&old[i].st===c.st){c.orig=old[i].orig;c.text=old[i].text}});S.sub.cues=cues;S.sub.lastKey=''}};
   window.sanad.subExtract(id,o.url,st.i,d=>{if(S.ffId!==id)return;if(d.chunk){buf+=d.chunk;if(!timer)timer=setTimeout(flush,800)}if(d.done){flush();S.ffId=null;if(n<2){console.warn('ffsub',d.err);if(S.sub&&S.sub.meta.ff===st.i){S.sub=null;subSearch(o,true)}}}});
-  toast(L('✓ تم تشغيل الترجمة المدمجة: ','✓ Embedded subtitles on: ')+lname(st.l),2400)}
+  if(mt)arabize(S.sub,st.l||'en');else toast(L('✓ تم تشغيل الترجمة المدمجة: ','✓ Embedded subtitles on: ')+lname(st.l),2400)}
 function subsStart(o){S.subCtx={o,list:null,state:'idle'};ffSubStop();if(!o||!o.subItem)return;
   (async()=>{let emb=null;if(isApp()){try{const info=await probeItem({key:o.key,url:o.url},o.url);if(info&&S.vod===o)S.subCtx.ff=info}catch(e){}}
     await new Promise(r=>setTimeout(r,600));if(S.vod!==o||!S.subCtx)return;if(!S.settings.subAuto)return;const pref=S.settings.subLang;
@@ -827,6 +868,12 @@ async function subSearch(o,auto){const ctx=S.subCtx;if(!ctx||!o.subItem)return;c
   if(S.vod!==o||S.subCtx!==ctx)return;ctx.list=list;ctx.state='ready';if(S.side&&S.side.type==='menu')renderSide();if(!auto)return;
   const pref=list.filter(c=>c.lang===S.settings.subLang);
   for(const c of pref.slice(0,5)){if(S.vod!==o)return;try{await loadCandidate(c,true);return}catch(e){console.warn('sub load',c.url,e)}}
+  if(S.settings.forceAr!==false&&S.settings.subLang==='ar'){
+    const ff=ctx.ff;const other=ff&&ff.s&&ff.s.filter(x=>!/hdmv|pgs|dvd|dvb/i.test(x.c));
+    if(other&&other.length){const st=other.find(x=>x.l==='en')||other[0];useFfSub(o,st,true);return}
+    const en=list.filter(c=>c.lang==='en').concat(list.filter(c=>c.lang!=='en'&&c.lang!=='ar'));
+    for(const c of en.slice(0,4)){if(S.vod!==o)return;try{await loadCandidate(c,true);if(S.sub&&S.sub.meta.cand===c){arabize(S.sub,c.lang);return}}catch(e){console.warn('sub load',c.url,e)}}
+    if(speechStart(o,curT()))return}
   toast(L(`ما لقيت ترجمة ${langAdj(S.settings.subLang)} لهذا العمل${(S.settings.subdl||'').trim()?'':' — فعّل مصدر SubDL من الإعدادات ← الترجمة عشان تلقى أكثر'}. تقدر تختار من قائمة 💬`,`No ${langName(S.settings.subLang)} subtitles found${(S.settings.subdl||'').trim()?'':' — enable SubDL in Settings → Subtitles for more'}. You can pick from the 💬 menu`),6000)}
 function subMenu(){const it=[];const o=S.vod;const ctx=S.subCtx;const cur=S.sub&&S.sub.meta;
   it.push({label:L('إيقاف الترجمة','Subtitles off'),on:!S.sub,act:subsOff});
@@ -1711,6 +1758,8 @@ function setContent(c){const P=pl();
     <div class="opt"><div class="f"><b>🔊 ${L('لغة الصوت المفضلة','Preferred audio language')}</b><small>${L('إذا الفيلم فيه أكثر من مسار صوت، يختار هذي اللغة تلقائياً. مجموعات الأنمي دايماً تشتغل بالصوت الياباني مع ترجمة عربية (تقدر تحدد مجموعات الأنمي من «المجموعات»).','When a title has several audio tracks, this one is chosen automatically. Anime groups always play Japanese audio with Arabic subtitles (set anime groups under “Groups”).')}</small></div><select class="in" data-sel="audioLang"><option value="" ${!S.settings.audioLang?'selected':''}>${L('الأصلي (ما يغيّر)','Original (no change)')}</option>${[['ar','العربية','Arabic'],['en','الإنجليزية','English'],['ja','اليابانية','Japanese'],['tr','التركية','Turkish'],['fr','الفرنسية','French'],['hi','الهندية','Hindi'],['ko','الكورية','Korean']].map(([v,a,e])=>`<option value="${v}" ${S.settings.audioLang===v?'selected':''}>${L(a,e)}</option>`).join('')}</select></div>
     <div class="opt"><div class="f"><b>⚙️ ${L('الإعدادات الأولية','Initial setup')}</b><small>${L('لغة الترجمة والصوت وتحسين الصورة بخطوة وحدة','Subtitle & audio language and picture enhancement in one step')}</small></div><button class="btn" data-act="setup">${L('فتح','Open')}</button></div>
     ${optSw('enhLive',L('✨ تحسين الصورة في القنوات المباشرة','✨ Enhance live channels'),'')}${optSw('enhMovies',L('✨ تحسين الصورة في الأفلام','✨ Enhance movies'),'')}${optSw('enhSeries',L('✨ تحسين الصورة في المسلسلات','✨ Enhance series'),'')}${optSw('animeJa',L('🎌 الأنمي بصوت ياباني وترجمة عربية','🎌 Anime: Japanese audio + Arabic subtitles'),'')}
+    ${optSw('forceAr',L('🤖 ترجمة عربية إجبارية','🤖 Forced Arabic subtitles'),L('إذا ما فيه ترجمة عربية: يترجم أي ترجمة ثانية (مدمجة أو من النت) للعربي تلقائياً، وإذا ما فيه ترجمة أبداً يولّدها من الصوت (على الماك)','If no Arabic subtitles exist: machine-translate any other subtitle (embedded or online) to Arabic; if there are none at all, generate them from the audio (Mac)'))}${isApp()?optSw('speechSubs',L('🎙 توليد الترجمة من الصوت (Whisper)','🎙 Generate subtitles from speech (Whisper)'),L('يحتاج تنزيل محرك الكلام مرة وحدة (~٣٠٠ ميجا) ويشتغل على كرت الشاشة','Downloads the speech model once (~300 MB), runs on the GPU')):''}
+    <div class="opt"><div class="f"><b>🌐 ${L('محرك الترجمة الآلية','Machine translation engine')}</b><small>${L('«تلقائي»: الماك والآيفون من النت (أدق) ولو ما فيه نت يترجم على الجهاز، والأندرويد على الجهاز (Google ML Kit). «من النت»: أدق دائماً. «على الجهاز»: بدون إنترنت','“Auto”: Mac/iPhone online (best) with on-device fallback; Android on-device (Google ML Kit). “Online”: always best quality. “On-device”: offline')}</small></div><select class="in" data-sel="mtEngine">${[['auto',L('تلقائي','Auto')],['online',L('من النت (أدق)','Online (best)')],['device',L('على الجهاز','On-device')]].map(([v,n])=>`<option value="${v}" ${(S.settings.mtEngine||'auto')===v?'selected':''}>${n}</option>`).join('')}</select></div>
     ${optSw('onlyAr',L('💬 العربي والمترجم بس','💬 Arabic & subtitled only'),L('يخفي من كل قوائم الأفلام والمسلسلات والبحث أي عمل مو عربي ولا مترجم (حسب تسمية المزوّد والمسارات المكتشفة)','Hides anything that is neither Arabic nor Arabic-subtitled from every list and search (based on provider labels and detected tracks)'))}
     ${optSw('maxq',L('أعلى جودة متوفرة دائماً','Always use the highest quality'),L('يختار نسخة 4K أو FHD من الفيلم إذا كانت موجودة في اشتراكك، ويشغّل أعلى جودة في البث بدل التلقائي','Picks the 4K or FHD version of a movie when your subscription has one, and plays the stream\'s top quality instead of auto'))}
     ${optSw('autoplay',L('تشغيل آخر قناة عند فتح البرنامج','Play the last channel on start'),L('يكمل من آخر قناة كنت تشوفها','Continues from the channel you were watching'))}${optSw('autoFs',L('ملء الشاشة تلقائياً','Fullscreen automatically'),L('يدخل ملء الشاشة عند فتح قناة أو فيلم','Goes fullscreen when you open a channel or movie'))}
@@ -1962,9 +2011,18 @@ if(MOB){(function(){
   // ---- external Arabic subtitles when the file has none embedded ----
   const p2=n=>String(n).padStart(2,'0');const ts=x=>{x=Math.max(0,x);const h=Math.floor(x/3600),m=Math.floor(x%3600/60),sc=Math.floor(x%60),ms=Math.round((x%1)*1000)%1000;return `${p2(h)}:${p2(m)}:${p2(sc)},${String(ms).padStart(3,'0')}`};
   const toSrt=cues=>cues.map((c,i)=>`${i+1}\n${ts(c.st)} --> ${ts(c.en)}\n${String(c.text).replace(/\{\\[^}]*\}/g,'').replace(/<(?!\/?[ibu]>)[^>]*>/gi,'')}\n`).join('\n');
-  NAT.addListener('needSubs',async d=>{const o=S.vod;if(!o||o.key!==d.key||!o.subItem||!S.settings.subAuto)return;
-    try{const pref=S.settings.subLang||'ar';const list=(await findSubs(o.subItem,o.subSeason,o.subEp)).filter(c=>c.lang===pref);
-      for(const c of list.slice(0,5)){if(S.vod!==o)return;try{const txt=await fetchSubText(c,o.subSeason,o.subEp);const cues=parseSubs(txt);if(cues.length<3)continue;await NAT.addSubtitle({key:o.key,text:toSrt(cues),label:`${langName(c.lang)} · ${c.src}`});return}catch(e){console.warn('sub',e)}}}catch(e){console.warn('subs',e)}});
+  const PLAT=CAP.getPlatform?CAP.getPlatform():'android';
+  NAT.addListener('needSubs',async d=>{const o=S.vod;if(!o||o.key!==d.key||!S.settings.subAuto)return;
+    const pref=S.settings.subLang||'ar';const force=S.settings.forceAr!==false&&pref==='ar';let all=[];
+    try{if(o.subItem)all=await findSubs(o.subItem,o.subSeason,o.subEp)}catch(e){console.warn('subs',e)}
+    for(const c of all.filter(c=>c.lang===pref).slice(0,5)){if(S.vod!==o)return;try{const txt=await fetchSubText(c,o.subSeason,o.subEp);const cues=parseSubs(txt);if(cues.length<3)continue;await NAT.addSubtitle({key:o.key,text:toSrt(cues),label:`${langName(c.lang)} · ${c.src}`,lang:'ar'});return}catch(e){console.warn('sub',e)}}
+    if(!force||S.vod!==o)return;
+    if(d.hasOther){try{await NAT.useMt({key:o.key,engine:S.settings.mtEngine||'auto'})}catch(e){}return}
+    const cand=all.filter(c=>c.lang==='en').concat(all.filter(c=>c.lang!=='en'&&c.lang!=='ar'));
+    for(const c of cand.slice(0,4)){if(S.vod!==o)return;try{const txt=await fetchSubText(c,o.subSeason,o.subEp);let cues=parseSubs(txt);if(cues.length<3)continue;
+        if(PLAT==='android'&&(S.settings.mtEngine||'auto')!=='online'){await NAT.addSubtitle({key:o.key,text:toSrt(cues),label:'🤖 '+L('عربي (ترجمة آلية)','Arabic (machine)'),lang:c.lang,translate:true});return}
+        const tr=await mtLines(cues.map(x=>String(x.text).replace(/<[^>]+>/g,'').replace(/\s*\n\s*/g,' ').trim()),c.lang);cues=cues.map((x,i)=>Object.assign({},x,{text:tr[i]||x.text}));
+        await NAT.addSubtitle({key:o.key,text:toSrt(cues),label:'🤖 '+L('عربي (ترجمة آلية)','Arabic (machine)'),lang:'ar'});return}catch(e){console.warn('mt sub',e)}}});
   NAT.addListener('enhMode',d=>saveEnh(d.mode));
   // ---- downloads through Android DownloadManager ----
   startDownload=async function(it,ver,title,poster,epi){const url=ver.url;if(/\.m3u8(\?|$)/i.test(url)){toast(L('هذا العمل بث متقطع (HLS) وما ينفع تنزيله مباشرة','This title is an HLS stream and can\'t be downloaded directly'));return}

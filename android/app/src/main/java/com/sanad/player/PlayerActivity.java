@@ -35,6 +35,20 @@ import androidx.media3.common.MimeTypes;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.common.TrackSelectionParameters;
+import androidx.media3.common.text.Cue;
+import androidx.media3.common.text.CueGroup;
+import androidx.media3.common.TrackSelectionOverride;
+import com.google.mlkit.common.model.DownloadConditions;
+import com.google.mlkit.nl.translate.TranslateLanguage;
+import com.google.mlkit.nl.translate.Translation;
+import com.google.mlkit.nl.translate.Translator;
+import com.google.mlkit.nl.translate.TranslatorOptions;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import androidx.media3.common.Tracks;
 import androidx.media3.common.VideoSize;
 import androidx.media3.common.util.UnstableApi;
@@ -242,6 +256,20 @@ public class PlayerActivity extends Activity {
     errTv.setVisibility(View.GONE);
     errTv.setOnClickListener(v -> { errTv.setVisibility(View.GONE); retries = 0; if (live) startChannel(); else startVod(player.getCurrentPosition()); });
     root.addView(errTv, new FrameLayout.LayoutParams(-2, -2, Gravity.CENTER));
+    mtTv = new TextView(this);
+    mtTv.setTextColor(Color.WHITE);
+    mtTv.setTypeface(Typeface.DEFAULT_BOLD);
+    mtTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, (float) (19 * opts.optDouble("subScale", 1.25)));
+    mtTv.setShadowLayer(6f, 0f, 0f, Color.BLACK);
+    mtTv.setGravity(Gravity.CENTER);
+    mtTv.setTextDirection(View.TEXT_DIRECTION_RTL);
+    mtTv.setPadding(dp(12), dp(4), dp(12), dp(4));
+    mtTv.setBackgroundColor(Color.argb(90, 0, 0, 0));
+    mtTv.setVisibility(View.GONE);
+    FrameLayout.LayoutParams mlp = new FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+    mlp.bottomMargin = dp(26);
+    mlp.leftMargin = dp(40); mlp.rightMargin = dp(40);
+    root.addView(mtTv, mlp);
     setContentView(root);
 
     view.setControllerVisibilityListener((PlayerView.ControllerVisibilityListener) visibility -> {
@@ -299,6 +327,12 @@ public class PlayerActivity extends Activity {
       }
       @Override public void onTracksChanged(Tracks tracks) { checkSubs(tracks); }
       @Override public void onVideoSizeChanged(VideoSize vs) { updateBadge(); }
+      @Override public void onCues(CueGroup cg) {
+        if (!mtOn) return;
+        StringBuilder b = new StringBuilder();
+        for (Cue c : cg.cues) if (c.text != null) { if (b.length() > 0) b.append('\n'); b.append(c.text.toString()); }
+        showCue(b.toString());
+      }
     });
   }
 
@@ -310,7 +344,7 @@ public class PlayerActivity extends Activity {
       b.setSubtitleConfigurations(Collections.singletonList(
           new MediaItem.SubtitleConfiguration.Builder(Uri.fromFile(extSub))
               .setMimeType(MimeTypes.APPLICATION_SUBRIP)
-              .setLanguage("ar")
+              .setLanguage(extSubLang)
               .setLabel(extSubLabel)
               .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
               .build()));
@@ -375,16 +409,106 @@ public class PlayerActivity extends Activity {
     }
     if (!hasVideo) return;
     askedSubs = true;
-    if (!hasAr) SanadNativePlugin.emit("needSubs", new JSObject().put("key", opts.optString("key", "")));
+    boolean hasOther = false;
+    for (Tracks.Group g : tracks.getGroups()) if (g.getType() == C.TRACK_TYPE_TEXT && g.length > 0) hasOther = true;
+    if (!hasAr) SanadNativePlugin.emit("needSubs", new JSObject().put("key", opts.optString("key", "")).put("hasOther", hasOther));
     else badgeExtra = "💬 ترجمة عربية مدمجة";
   }
 
   String badgeExtra = "";
+  // ---- on-device machine translation of subtitles (Google ML Kit) ----
+  Translator translator;
+  boolean mtOn = false, mtReady = false;
+  String mtFrom = "en", curCue = "";
+  TextView mtTv;
+  final Map<String, String> mtCache = new HashMap<>();
+  String extSubLang = "ar";
+
+  static String norm(String t) { return t == null ? "" : t.replaceAll("<[^>]+>", "").replaceAll("\\s+", " ").trim(); }
+
+  static String mlLang(String l) {
+    if (l == null) return TranslateLanguage.ENGLISH;
+    l = l.toLowerCase();
+    if (l.contains("-")) l = l.substring(0, l.indexOf('-'));
+    if (l.contains("_")) l = l.substring(0, l.indexOf('_'));
+    switch (l) {
+      case "eng": l = "en"; break; case "fre": case "fra": l = "fr"; break; case "spa": l = "es"; break; case "tur": l = "tr"; break;
+      case "ger": case "deu": l = "de"; break; case "ita": l = "it"; break; case "por": l = "pt"; break; case "rus": l = "ru"; break;
+      case "hin": l = "hi"; break; case "jpn": l = "ja"; break; case "kor": l = "ko"; break; case "chi": case "zho": l = "zh"; break;
+      case "per": case "fas": l = "fa"; break; case "urd": l = "ur"; break; case "dut": case "nld": l = "nl"; break; case "ind": l = "id"; break;
+    }
+    String t = TranslateLanguage.fromLanguageTag(l);
+    return t == null ? TranslateLanguage.ENGLISH : t;
+  }
+
+  void enableMt(String lang) {
+    if (mtOn && translator != null && mlLang(lang).equals(mtFrom)) return;
+    mtOn = true; mtReady = false;
+    mtFrom = mlLang(lang);
+    if (translator != null) translator.close();
+    translator = Translation.getClient(new TranslatorOptions.Builder().setSourceLanguage(mtFrom).setTargetLanguage(TranslateLanguage.ARABIC).build());
+    badgeExtra = "🤖 تنزيل محرك الترجمة العربي (مرة وحدة)…";
+    if (view.getSubtitleView() != null) view.getSubtitleView().setVisibility(View.GONE);
+    mtTv.setVisibility(View.VISIBLE);
+    translator.downloadModelIfNeeded(new DownloadConditions.Builder().build())
+        .addOnSuccessListener(v -> { mtReady = true; badgeExtra = "🤖 ترجمة عربية آلية"; showCue(curCue); if (extSub != null) pretranslate(extSub); })
+        .addOnFailureListener(e -> { badgeExtra = "تعذّر تنزيل محرك الترجمة — تأكد من الإنترنت"; mtOn = false; mtTv.setVisibility(View.GONE); if (view.getSubtitleView() != null) view.getSubtitleView().setVisibility(View.VISIBLE); });
+  }
+
+  void showCue(String text) {
+    curCue = text;
+    if (!mtOn) return;
+    final String k = norm(text);
+    if (k.isEmpty()) { mtTv.setText(""); mtTv.setVisibility(View.INVISIBLE); return; }
+    String hit = mtCache.get(k);
+    if (hit != null) { mtTv.setText(hit); mtTv.setVisibility(View.VISIBLE); return; }
+    if (!mtReady || translator == null) return;
+    translator.translate(k).addOnSuccessListener(r -> { mtCache.put(k, r); if (k.equals(norm(curCue))) { mtTv.setText(r); mtTv.setVisibility(View.VISIBLE); } });
+  }
+
+  /** translate a whole SRT file ahead of time so cues appear instantly */
+  void pretranslate(File f) {
+    final List<String> lines = new ArrayList<>();
+    try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+      StringBuilder blk = new StringBuilder(); String ln; boolean inText = false;
+      Pattern tp = Pattern.compile("-->");
+      while ((ln = br.readLine()) != null) {
+        if (ln.trim().isEmpty()) { if (blk.length() > 0) lines.add(norm(blk.toString())); blk.setLength(0); inText = false; continue; }
+        if (tp.matcher(ln).find()) { inText = true; continue; }
+        if (inText) blk.append(ln).append('\n');
+      }
+      if (blk.length() > 0) lines.add(norm(blk.toString()));
+    } catch (Exception e) { return; }
+    pretranslateFrom(lines, 0);
+  }
+  void pretranslateFrom(List<String> lines, int i) {
+    if (isFinishing() || translator == null || i >= lines.size()) return;
+    String k = lines.get(i);
+    if (k.isEmpty() || mtCache.containsKey(k)) { pretranslateFrom(lines, i + 1); return; }
+    translator.translate(k).addOnSuccessListener(r -> { mtCache.put(k, r); if (k.equals(norm(curCue))) { mtTv.setText(r); mtTv.setVisibility(View.VISIBLE); } pretranslateFrom(lines, i + 1); })
+        .addOnFailureListener(e -> pretranslateFrom(lines, i + 1));
+  }
+
+  /** called by the plugin: translate the embedded (non-Arabic) subtitle track */
+  void useMt() {
+    if (player == null || live) return;
+    Tracks.Group best = null; String bestLang = null;
+    for (Tracks.Group g : player.getCurrentTracks().getGroups()) {
+      if (g.getType() != C.TRACK_TYPE_TEXT) continue;
+      String l = g.getTrackFormat(0).language == null ? "und" : g.getTrackFormat(0).language.toLowerCase();
+      if (best == null || l.startsWith("en")) { best = g; bestLang = l; }
+    }
+    if (best == null) return;
+    player.setTrackSelectionParameters(player.getTrackSelectionParameters().buildUpon()
+        .setOverrideForType(new TrackSelectionOverride(best.getMediaTrackGroup(), 0)).build());
+    enableMt(bestLang);
+  }
 
   /** called by the plugin when the web layer found an external Arabic subtitle */
-  void addExternalSub(File f, String label, String forKey) {
+  void addExternalSub(File f, String label, String forKey, String lang, boolean translate) {
     if (live || !opts.optString("key", "").equals(forKey) || player == null) return;
     extSub = f;
+    extSubLang = translate ? (lang == null || lang.isEmpty() ? "en" : lang) : "ar";
     if (label != null && !label.isEmpty()) extSubLabel = label;
     long pos = player.getCurrentPosition();
     boolean pwr = player.getPlayWhenReady();
@@ -392,6 +516,10 @@ public class PlayerActivity extends Activity {
     player.prepare();
     player.setPlayWhenReady(pwr);
     badgeExtra = "💬 ترجمة عربية: " + extSubLabel;
+    if (!"ar".equals(extSubLang)) {
+      player.setTrackSelectionParameters(player.getTrackSelectionParameters().buildUpon().setPreferredTextLanguage(extSubLang).build());
+      enableMt(extSubLang);
+    }
   }
 
   @SuppressLint("SetTextI18n")
@@ -458,6 +586,7 @@ public class PlayerActivity extends Activity {
   @Override protected void onDestroy() {
     ui.removeCallbacksAndMessages(null);
     if (current == this) current = null;
+    if (translator != null) { translator.close(); translator = null; }
     if (player != null) { player.release(); player = null; }
     super.onDestroy();
   }

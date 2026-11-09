@@ -10,6 +10,7 @@ public class SanadNativePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "info", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "play", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "addSubtitle", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "useMt", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "download", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "dlStatus", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "dlRemove", returnType: CAPPluginReturnPromise)
@@ -35,6 +36,10 @@ public class SanadNativePlugin: CAPPlugin, CAPBridgedPlugin {
             self.playerVC = vc
             root.present(vc, animated: true)
         }
+    }
+
+    @objc func useMt(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { self.playerVC?.useMt(); call.resolve() }
     }
 
     @objc func addSubtitle(_ call: CAPPluginCall) {

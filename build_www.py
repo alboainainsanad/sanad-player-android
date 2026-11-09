@@ -6,7 +6,7 @@ h=re.sub(r'<link href="https://fonts.googleapis.com[^>]+>','<style>'+fonts+'</st
 h=h.replace('https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js','lib/hls.min.js').replace('https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.min.js','lib/mpegts.js').replace('https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js','lib/fflate.js')
 h=h.replace('<meta name="viewport"','<meta name="viewport-orig"') if '<meta name="viewport"' in h else h
 h=h.replace('<head>','<head>\n<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">',1)
-assert 'googleapis' not in h and 'jsdelivr' not in h
+assert 'fonts.googleapis' not in h and 'jsdelivr' not in h
 W='/home/claude/apk/sp/www';shutil.rmtree(W,ignore_errors=True);os.makedirs(W)
 open(W+'/index.html','w').write(h)
 shutil.copytree('/home/claude/mac/app/lib',W+'/lib');shutil.copytree('/home/claude/mac/app/fonts',W+'/fonts')

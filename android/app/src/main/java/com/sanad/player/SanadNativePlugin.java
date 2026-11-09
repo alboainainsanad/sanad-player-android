@@ -67,15 +67,24 @@ public class SanadNativePlugin extends Plugin {
     String text = call.getString("text", "");
     String key = call.getString("key", "");
     String label = call.getString("label", "عربي");
+    String lang = call.getString("lang", "ar");
+    boolean translate = Boolean.TRUE.equals(call.getBoolean("translate", false));
     try {
       File f = new File(getContext().getCacheDir(), "sub_" + System.currentTimeMillis() + ".srt");
       try (FileOutputStream os = new FileOutputStream(f)) { os.write(text.getBytes(StandardCharsets.UTF_8)); }
       PlayerActivity a = PlayerActivity.current;
-      if (a != null) a.runOnUiThread(() -> a.addExternalSub(f, label, key));
+      if (a != null) a.runOnUiThread(() -> a.addExternalSub(f, label, key, lang, translate));
       call.resolve();
     } catch (Exception e) {
       call.reject(e.getMessage());
     }
+  }
+
+  @PluginMethod
+  public void useMt(PluginCall call) {
+    PlayerActivity a = PlayerActivity.current;
+    if (a != null) a.runOnUiThread(a::useMt);
+    call.resolve();
   }
 
   // ---------------- downloads (Android DownloadManager → Movies/Sanad Player/<folder>) ----------------
