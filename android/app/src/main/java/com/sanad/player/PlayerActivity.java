@@ -319,15 +319,16 @@ public class PlayerActivity extends Activity {
     player.addListener(new Player.Listener() {
       @Override public void onPlaybackStateChanged(int st) {
         if (st == Player.STATE_READY) { retries = 0; errTv.setVisibility(View.GONE); }
-        if (st == Player.STATE_ENDED && !live) { ended = true; finishWithResult(); }
+        if (st == Player.STATE_ENDED) {
+          long dur = player.getDuration(), pos = player.getCurrentPosition();
+          // a VOD that "ends" more than 45 s before its real end was dropped by the server — resume, don't exit
+          if (!live && dur > 120000 && pos < dur - 45000) { reconnect(pos); return; }
+          if (live) { reconnect(0); return; }
+          ended = true; finishWithResult();
+        }
       }
       @Override public void onPlayerError(PlaybackException e) {
-        if (retries < 2) {
-          retries++;
-          long pos = player.getCurrentPosition();
-          ui.postDelayed(() -> { if (live) startChannel(); else startVod(pos); }, 1200);
-          return;
-        }
+        if (retries < 8) { reconnect(player.getCurrentPosition()); return; }
         errTv.setText("تعذّر التشغيل\n" + e.getErrorCodeName().replace("ERROR_CODE_", "") + "\n\nاضغط لإعادة المحاولة");
         errTv.setVisibility(View.VISIBLE);
       }
@@ -431,6 +432,15 @@ public class PlayerActivity extends Activity {
     if (c != null && (c.colorTransfer == C.COLOR_TRANSFER_ST2084 || c.colorTransfer == C.COLOR_TRANSFER_HLG)) return true;
     String cs = f.codecs == null ? "" : f.codecs.toLowerCase();
     return cs.startsWith("dvhe") || cs.startsWith("dvh1") || cs.startsWith("dav1");
+  }
+  /** resume from the same second with growing back-off; the badge tells the viewer what is happening */
+  void reconnect(long pos) {
+    retries++;
+    long[] waits = {800, 1500, 2500, 4000, 6000, 8000, 10000, 12000};
+    long w = waits[Math.min(retries, waits.length) - 1];
+    errTv.setText("انقطع الاتصال بالسيرفر — إعادة الاتصال (" + retries + ")…");
+    errTv.setVisibility(View.VISIBLE);
+    ui.postDelayed(() -> { if (isFinishing() || player == null) return; errTv.setVisibility(View.GONE); if (live) startChannel(); else startVod(Math.max(0, pos - 1000)); }, w);
   }
   void checkHdr(Tracks tracks) {
     if (hdr || rebuilding || player == null) return;
