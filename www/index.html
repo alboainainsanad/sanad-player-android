@@ -399,7 +399,7 @@ const idb={db:null,
 };
 const S={
   playlists:store.get('playlists',[]),active:store.get('active',null),
-  settings:Object.assign({fmt:'m3u8',tmdb:'',epgShift:0,clock24:false,autoplay:true,autoFs:true,aspect:'contain',enh:'auto',motion:'light',audioLang:'',maxq:true,subAuto:true,subLang:'ar',subSize:'m',subBg:false,subColor:'#ffffff',subdl:'',pin:'',autoProbe:true,forceAr:true,mtEngine:'auto',speechSubs:true,animeJa:true,enhLive:true,enhMovies:true,enhSeries:true,setupDone:false,vf:{}},store.get('settings',{})),
+  settings:Object.assign({fmt:'m3u8',tmdb:'',epgShift:0,clock24:false,autoplay:true,autoFs:true,aspect:'contain',enh:'auto',motion:'light',audioLang:'',maxq:true,subAuto:true,subLang:'ar',subSize:'m',subBg:false,subColor:'#ffffff',subdl:'',osKey:'',pin:'',autoProbe:true,forceAr:true,mtEngine:'auto',speechSubs:true,animeJa:true,enhLive:true,enhMovies:true,enhSeries:true,setupDone:false,vf:{}},store.get('settings',{})),
   favs:new Set(store.get('favs',[])),pfavs:new Set(store.get('pfavs',[])),unlocked:false,tracks:store.get('tracks',{}),anime:store.get('anime',{}),locks:store.get('locks',{}),noTrack:new Set(store.get('noTrack',[])),dls:store.get('dls',[]),recents:store.get('recents',[]),resume:store.get('resume',{}),hidden:store.get('hidden',{}),
   live:[],movies:[],series:[],epg:{},epgNames:{},info:null,serverTz:null,gOrder:null,meta:{},idx:null,qsel:{},subsFound:{},
   screen:'tv',cur:null,stack:[],
@@ -772,18 +772,46 @@ async function yifySearch(ids,langs){
     const tr=a.closest('tr');let rating=0;if(tr){const c=tr.querySelector('.rating-cell,.label,td');const n=parseInt(c&&c.textContent,10);if(!isNaN(n))rating=n}
     out.push({src:'YIFY',lang:lg[0],release:(a.textContent||'').replace(/^\s*subtitle\s*/i,'').trim(),rating,url})});
   return out.sort((a,b)=>b.rating-a.rating)}
-function findSubs(item,season,ep){const k=[item.key,season??'',ep??'',S.settings.subLang,(S.settings.subdl||'').trim()?1:0].join('|');if(subCache.has(k))return subCache.get(k);
+const OS3={ar:'ara',en:'eng',fr:'fre',tr:'tur',es:'spa',de:'ger',it:'ita',pt:'por',ru:'rus',fa:'per',ur:'urd',hi:'hin',ja:'jpn',ko:'kor',zh:'chi',nl:'dut',id:'ind',ms:'may'};
+/* OpenSubtitles.org — same catalogue IPTV Expert uses, no key needed (public REST, X-User-Agent) */
+async function osOrgSearch(ids,season,ep,langs){if(!ids.imdb)return[];const id=String(ids.imdb).replace(/^tt/,'');
+  const sl=langs.map(l=>OS3[l]).filter(Boolean).join(',');
+  const path=(ep!=null?`/episode-${+ep}`:'')+`/imdbid-${id}`+(season!=null?`/season-${+season}`:'')+`/sublanguageid-${sl}`;
+  const r=await fetch('https://rest.opensubtitles.org/search'+path,{headers:{'X-User-Agent':'TemporaryUserAgent','Accept':'application/json'}});if(!r.ok)throw new Error('os '+r.status);const d=await r.json();
+  return (Array.isArray(d)?d:[]).filter(x=>x&&x.SubDownloadLink&&/srt|ass|ssa|vtt|sub/i.test(x.SubFormat||'srt')).map(x=>({src:'OpenSubtitles',lang:subLangCode(x.ISO639||x.SubLanguageID),release:x.MovieReleaseName||x.SubFileName||'',file:x.SubFileName||'',url:x.SubDownloadLink,dl:+x.SubDownloadsCnt||0,hi:x.SubHearingImpaired==='1',season:x.SeriesSeason?+x.SeriesSeason:null,ep:x.SeriesEpisode?+x.SeriesEpisode:null}))}
+/* OpenSubtitles.com — optional personal API key from Settings (more results, better ranking) */
+async function osComSearch(item,ids,season,ep,langs){const key=(S.settings.osKey||'').trim();if(!key||!(ids.imdb||ids.tmdb))return[];
+  const q=new URLSearchParams({languages:langs.join(','),order_by:'download_count'});if(ids.imdb)q.set(item.kind==='movie'?'imdb_id':'parent_imdb_id',String(ids.imdb).replace(/^tt0*/,''));else q.set(item.kind==='movie'?'tmdb_id':'parent_tmdb_id',ids.tmdb);
+  if(season!=null){q.set('season_number',season);q.set('episode_number',ep)}
+  const r=await fetch('https://api.opensubtitles.com/api/v1/subtitles?'+q,{headers:{'Api-Key':key,'Accept':'application/json','X-User-Agent':'SanadPlayer v2.4'}});if(!r.ok)throw new Error('osc '+r.status);const d=await r.json();
+  return ((d&&d.data)||[]).map(x=>{const a=x.attributes||{};const f=(a.files||[])[0];const fd=a.feature_details||{};return f&&{src:'OpenSubtitles+',lang:subLangCode(a.language),release:a.release||'',file:f.file_name||'',osFile:f.file_id,dl:+a.download_count||0,hi:!!a.hearing_impaired,season:fd.season_number??null,ep:fd.episode_number??null}}).filter(Boolean)}
+async function osComLink(c){const key=(S.settings.osKey||'').trim();const r=await fetch('https://api.opensubtitles.com/api/v1/download',{method:'POST',headers:{'Api-Key':key,'Content-Type':'application/json','Accept':'application/json','X-User-Agent':'SanadPlayer v2.4'},body:JSON.stringify({file_id:c.osFile})});
+  const d=await r.json();if(!d||!d.link)throw new Error('osc dl '+(d&&d.message||r.status));return d.link}
+/* smarter than "list everything": wrong-episode results dropped, Arabic first, then matched to what you're actually playing */
+function subRank(list,item,season,ep){const pref=S.settings.subLang||'ar';const v=V&&V();const h=v&&v.videoHeight||0;
+  const qtag=h>=1600?/2160p|4k|uhd/i:h>=900?/1080p/i:h>=600?/720p/i:h>0?/480p|dvd|sd/i:null;
+  const nm=String((S.vod&&S.vod.it&&S.vod.it.name)||item.name||'').toLowerCase();const src=/web[-. ]?dl|webrip|web\b/i.test(nm)?/web/i:/blu[-. ]?ray|bdrip|brrip/i.test(nm)?/blu|bd|br/i:null;
+  const se=r=>{const m=String(r).match(/s(\d{1,2})[ ._-]*e(\d{1,3})|\b(\d{1,2})x(\d{2,3})\b/i);return m?[+(m[1]||m[3]),+(m[2]||m[4])]:null};
+  const seen=new Set();
+  return list.filter(c=>{const k=c.url||c.osFile;if(seen.has(k))return false;seen.add(k);const t=se(c.release+' '+(c.file||''));
+      if(season==null)return !t;                                   // a film never gets an episode's subtitle
+      if(c.full)return true;if(c.ep!=null&&+c.ep!==+ep)return false;if(c.season!=null&&+c.season!==+season)return false;
+      return !t||(t[0]===+season&&t[1]===+ep)})
+    .map(c=>{let sc=0;const rel=c.release+' '+(c.file||'');if(c.lang===pref)sc+=1000;else if(c.lang==='ar')sc+=600;else if(c.lang==='en')sc+=300;
+      if(qtag&&qtag.test(rel))sc+=40;if(src&&src.test(rel))sc+=30;if(c.hi)sc-=15;sc+=Math.min(60,Math.log10(1+(c.dl||0))*12)+Math.min(20,(c.rating||0));if(c.src==='SubDL')sc+=8;
+      c.score=sc;return c}).sort((a,b)=>b.score-a.score)}
+function findSubs(item,season,ep){const k=[item.key,season??'',ep??'',S.settings.subLang,(S.settings.subdl||'').trim()?1:0,(S.settings.osKey||'').trim()?1:0].join('|');if(subCache.has(k))return subCache.get(k);
   const pr=(async()=>{const ids=await getIds(item);const langs=[...new Set([S.settings.subLang,'ar','en'])];
-    const res=await Promise.allSettled([subdlSearch(item,ids,season,ep,langs),item.kind==='movie'?yifySearch(ids,langs):Promise.resolve([])]);
+    const res=await Promise.allSettled([subdlSearch(item,ids,season,ep,langs),osComSearch(item,ids,season,ep,langs),osOrgSearch(ids,season,ep,langs),item.kind==='movie'?yifySearch(ids,langs):Promise.resolve([])]);
     const list=[];res.forEach(r=>{if(r.status==='fulfilled')list.push(...r.value);else console.warn('subs',r.reason)});
-    const pref=S.settings.subLang;return list.filter(c=>season==null||c.full||c.ep==null||+c.ep===+ep).sort((a,b)=>(b.lang===pref)-(a.lang===pref))})();
+    return subRank(list,item,season,ep)})();
   subCache.set(k,pr);pr.catch(()=>subCache.delete(k));return pr}
 function decodeSub(u8,lang){if(u8[0]===0xFF&&u8[1]===0xFE)return new TextDecoder('utf-16le').decode(u8);if(u8[0]===0xFE&&u8[1]===0xFF)return new TextDecoder('utf-16be').decode(u8);
   try{return new TextDecoder('utf-8',{fatal:true}).decode(u8)}catch(e){return new TextDecoder(lang==='ar'?'windows-1256':lang==='tr'?'windows-1254':'windows-1252').decode(u8)}}
 function unzipPick(u8,season,ep){if(!window.fflate)throw new Error('nozip');const files=fflate.unzipSync(u8);let ents=Object.entries(files).filter(([n,d])=>/\.(srt|vtt|ass|ssa|sub|txt)$/i.test(n)&&!/__MACOSX/.test(n)&&d.length>50);if(!ents.length)throw new Error('empty');
   if(ep!=null){const re=new RegExp(`(?:s0*${season}[ ._-]*e0*${ep}(?!\\d))|(?:\\b0*${season}x0*${ep}(?!\\d))`,'i');const m=ents.filter(([n])=>re.test(n.split('/').pop()));if(m.length)ents=m}
   ents.sort((a,b)=>((/\.srt$/i.test(b[0]))-(/\.srt$/i.test(a[0])))||(b[1].length-a[1].length));return ents[0][1]}
-async function fetchSubText(c,season,ep){const r=await fetch(c.url);if(!r.ok)throw new Error('dl '+r.status);let u8=new Uint8Array(await r.arrayBuffer());if(u8[0]===0x50&&u8[1]===0x4b)u8=unzipPick(u8,season,ep);return decodeSub(u8,c.lang)}
+async function fetchSubText(c,season,ep){if(c.osFile&&!c.url)c.url=await osComLink(c);const r=await fetch(c.url);if(!r.ok)throw new Error('dl '+r.status);let u8=new Uint8Array(await r.arrayBuffer());if(u8[0]===0x50&&u8[1]===0x4b)u8=unzipPick(u8,season,ep);else if(u8[0]===0x1f&&u8[1]===0x8b){if(!window.fflate)throw new Error('nogz');u8=fflate.gunzipSync(u8)}return decodeSub(u8,c.lang)}
 function parseSubs(txt){txt=String(txt).replace(/^﻿/,'').replace(/\r\n?/g,'\n');
   if(/^\s*\[Script Info\]/i.test(txt)||/^Dialogue:/m.test(txt)){const out=[];const tt=x=>{const m=x.trim().match(/(\d+):(\d+):(\d+)[.:](\d+)/);return m?+m[1]*3600+ +m[2]*60+ +m[3]+ +('0.'+m[4]):0};
     txt.split('\n').forEach(l=>{if(!/^Dialogue:/i.test(l))return;const p=l.slice(l.indexOf(':')+1).split(',');if(p.length<10)return;const text=p.slice(9).join(',').replace(/\{[^}]*\}/g,'').replace(/\\N/gi,'\n').trim();if(text)out.push({st:tt(p[1]),en:tt(p[2]),text})});return out.sort((a,b)=>a.st-b.st)}
@@ -874,7 +902,7 @@ async function subSearch(o,auto){const ctx=S.subCtx;if(!ctx||!o.subItem)return;c
     const en=list.filter(c=>c.lang==='en').concat(list.filter(c=>c.lang!=='en'&&c.lang!=='ar'));
     for(const c of en.slice(0,4)){if(S.vod!==o)return;try{await loadCandidate(c,true);if(S.sub&&S.sub.meta.cand===c){arabize(S.sub,c.lang);return}}catch(e){console.warn('sub load',c.url,e)}}
     if(speechStart(o,curT()))return}
-  toast(L(`ما لقيت ترجمة ${langAdj(S.settings.subLang)} لهذا العمل${(S.settings.subdl||'').trim()?'':' — فعّل مصدر SubDL من الإعدادات ← الترجمة عشان تلقى أكثر'}. تقدر تختار من قائمة 💬`,`No ${langName(S.settings.subLang)} subtitles found${(S.settings.subdl||'').trim()?'':' — enable SubDL in Settings → Subtitles for more'}. You can pick from the 💬 menu`),6000)}
+  toast(L(`ما لقيت ترجمة ${langAdj(S.settings.subLang)} لهذا العمل${(S.settings.subdl||'').trim()?'':' — تقدر تضيف مصدر SubDL من الإعدادات ← الترجمة'}. تقدر تختار من قائمة 💬`,`No ${langName(S.settings.subLang)} subtitles found${(S.settings.subdl||'').trim()?'':' — enable SubDL in Settings → Subtitles for more'}. You can pick from the 💬 menu`),6000)}
 function subMenu(){const it=[];const o=S.vod;const ctx=S.subCtx;const cur=S.sub&&S.sub.meta;
   it.push({label:L('إيقاف الترجمة','Subtitles off'),on:!S.sub,act:subsOff});
   if(S.sub&&S.sub.kind==='ext'){it.push({label:L('مزامنة: ','Sync: ')+(S.sub.offset>0?'+':'')+arN(S.sub.offset.toFixed(2))+L(' ث — اضغط للتصفير',' s — click to reset'),act:()=>{S.sub.offset=0;S.sub.lastKey=''},keep:true},
@@ -1781,6 +1809,8 @@ function setContent(c){const P=pl();
     ${optSw('subBg',L('خلفية سوداء خلف النص','Black box behind the text'),L('تسهّل القراءة فوق المشاهد الفاتحة','Easier to read over bright scenes'))}
     <h3 class="mt">${L('مصادر الترجمة','Subtitle sources')}</h3>
     <div class="opt"><div class="f"><b>${L('الترجمات المدمجة في البث','Subtitles embedded in the stream')}</b><small style="color:var(--ok)">✓ ${L('تلقائي','Automatic')}</small></div></div>
+    <div class="opt"><div class="f"><b>OpenSubtitles</b><small><span style="color:var(--ok)">✓ ${L('شغّال بدون إعداد','Works with no setup')}</span> — ${L('نفس مكتبة IPTV Expert، أفلام ومسلسلات، ونرتّبها لك: العربي أول، والأقرب لنسخة الفيلم اللي تشغّله، ونشيل ترجمات الحلقات الغلط','the same library IPTV Expert uses, movies & series — ranked for you: Arabic first, closest to the version you play, wrong-episode results removed')}</small></div></div>
+    <div class="opt col"><div class="f"><b>OpenSubtitles.com — ${L('مفتاح اختياري','optional key')}</b><small>${(S.settings.osKey||'').trim()?`<span style="color:var(--ok)">✓ ${L('مفعّل','Enabled')}</span>`:L('اختياري: يعطيك نتائج أكثر لو المصدر المجاني ما لقى','Optional: more results if the free source finds nothing')}</small></div><input class="in" id="osKey" value="${esc(S.settings.osKey||'')}" placeholder="${L('الصق مفتاح OpenSubtitles API هنا','Paste your OpenSubtitles API key here')}"><div class="row2"><button class="btn p" data-act="saveOs">${L('حفظ','Save')}</button>${(S.settings.osKey||'').trim()?`<button class="btn d" data-act="clearOs">${L('إلغاء التفعيل','Disable')}</button>`:''}</div></div>
     <div class="opt"><div class="f"><b>YIFY</b><small><span style="color:var(--ok)">✓ ${L('شغّال بدون إعداد','Works with no setup')}</span> — ${L('ترجمات للأفلام فقط','movies only')}</small></div></div>
     <div class="opt col"><div class="f"><b>SubDL — ${L('أكبر مكتبة ترجمة عربية للأفلام والمسلسلات','the largest Arabic subtitle library for movies & series')}</b><small>${hs?`<span style="color:var(--ok)">✓ ${L('مفعّل','Enabled')}</span>`:L('يحتاج مفتاح مجاني — بدونه ما في ترجمات للمسلسلات','Needs a free key — without it there are no subtitles for series')}</small></div><input class="in" id="subdlKey" value="${esc(S.settings.subdl)}" placeholder="${L('الصق مفتاح SubDL هنا','Paste your SubDL key here')}"><div class="row2"><button class="btn p" data-act="saveSubdl">${L('حفظ وتجربة','Save & test')}</button>${hs?`<button class="btn d" data-act="clearSubdl">${L('إلغاء التفعيل','Disable')}</button>`:''}</div></div>
     <div class="howto"><b>${L('طريقة الحصول على مفتاح SubDL (مجاني، دقيقتين):','How to get a SubDL key (free, 2 minutes):')}</b><ol>
@@ -1828,6 +1858,7 @@ function settingsClick(e){const t=e.target.closest('[data-sc2],[data-pa],[data-t
     toast(L('جاري التجربة…','Testing…'));tmdb('/configuration').then(()=>toast(L('✓ تم التفعيل! افتح أي فيلم وشوف طاقم التمثيل','✓ Enabled! Open any movie to see the cast'))).catch(()=>toast(L('المفتاح غير صحيح، أو ما في اتصال بالإنترنت','Invalid key, or no internet connection'))).finally(renderSettingsC)}
   else if(a==='saveSubdl'){S.settings.subdl=$('#subdlKey').value.trim();saveSet();subCache.clear();S.subsFound={};if(!S.settings.subdl){renderSettingsC();return}toast(L('جاري التجربة…','Testing…'));
     fetch('https://api.subdl.com/api/v1/subtitles?'+new URLSearchParams({api_key:S.settings.subdl,imdb_id:'tt1375666',type:'movie',languages:'AR'})).then(r=>r.json()).then(d=>{if(d&&d.status!==false)toast(L('✓ تم تفعيل SubDL!','✓ SubDL enabled!'));else toast(L('مفتاح SubDL غير صحيح','Invalid SubDL key'))}).catch(()=>toast(L('تعذّر الاتصال بـ SubDL','Couldn\'t reach SubDL'))).finally(renderSettingsC)}
+  else if(a==='saveOs'||a==='clearOs'){S.settings.osKey=a==='saveOs'?$('#osKey').value.trim():'';saveSet();subCache.clear();S.subsFound={};toast(a==='saveOs'?L('✓ تم الحفظ','✓ Saved'):L('تم الإلغاء','Disabled'));renderSettingsC()}
   else if(a==='clearSubdl'){S.settings.subdl='';saveSet();subCache.clear();renderSettingsC()}
   else if(a==='clearTmdb'){S.settings.tmdb='';saveSet();tcache.clear();S.meta={};renderSettingsC()}
   else if(a==='setPin'){const doSet=()=>askPin(v=>{S.settings.pin=v;saveSet();S.unlocked=true;toast(L('✓ تم حفظ الرمز','✓ PIN saved'));renderSettingsC()},'set');hasPin()&&!S.unlocked?askPin(doSet):doSet()}
