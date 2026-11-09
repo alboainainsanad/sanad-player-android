@@ -19,18 +19,20 @@ jobs:
         run: npm ci && npx cap sync ios
       - name: Build for simulator
         run: |
-          set -o pipefail
+          set +e
           xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
             -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim \
-            CODE_SIGNING_ALLOWED=NO build 2>&1 | tee sim.log | grep -E "error:|warning: .*Sanad|SP[A-Z]|BUILD" || true
-          test -d build/sim/Build/Products/Debug-iphonesimulator/App.app
+            CODE_SIGNING_ALLOWED=NO build > sim.log 2>&1; rc=$?
+          grep -E "error:|\*\* BUILD" sim.log | sort -u | head -60
+          exit $rc
       - name: Build for device (unsigned)
         run: |
-          set -o pipefail
+          set +e
           xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
             -destination 'generic/platform=iOS' -derivedDataPath build/dev \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build 2>&1 | tee dev.log | grep -E "error:|BUILD" || true
-          test -d build/dev/Build/Products/Release-iphoneos/App.app
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build > dev.log 2>&1; rc=$?
+          grep -E "error:|\*\* BUILD" dev.log | sort -u | head -60
+          test $rc -eq 0
           mkdir -p Payload && cp -R build/dev/Build/Products/Release-iphoneos/App.app Payload/ && zip -qry SanadPlayer-unsigned.ipa Payload
       - name: Run in simulator and screenshot
         run: |

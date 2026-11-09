@@ -7,7 +7,6 @@ class SanadBridgeViewController: CAPBridgeViewController {
     }
     override var prefersStatusBarHidden: Bool { true }
     override var prefersHomeIndicatorAutoHidden: Bool { true }
-    override var supportedInterfaceOrientations: UIInterfaceOrientationMask { .landscape }
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor(red: 10/255, green: 12/255, blue: 15/255, alpha: 1)
