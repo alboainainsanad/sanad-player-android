@@ -400,7 +400,7 @@ const idb={db:null,
 };
 const S={
   playlists:store.get('playlists',[]),active:store.get('active',null),
-  settings:Object.assign({fmt:'m3u8',tmdb:'',epgShift:0,clock24:false,autoplay:true,autoFs:true,aspect:'contain',enh:'auto',motion:'light',audioLang:'',maxq:true,subAuto:true,subLang:'ar',subSize:'m',subBg:false,subColor:'#ffffff',subdl:'',osKey:'',pin:'',autoProbe:true,forceAr:true,mtEngine:'auto',speechSubs:true,animeJa:true,enhLive:true,enhMovies:true,enhSeries:true,setupDone:false,vf:{}},store.get('settings',{})),
+  settings:Object.assign({fmt:'m3u8',tmdb:'',epgShift:0,clock24:false,autoplay:true,autoFs:true,aspect:'contain',enh:'auto',motion:'light',audioLang:'',maxq:true,subAuto:true,subLang:'ar',subSize:'m',subBg:false,subColor:'#ffffff',subdl:'',osKey:'',merge:false,pin:'',autoProbe:true,forceAr:true,mtEngine:'auto',speechSubs:true,animeJa:true,enhLive:true,enhMovies:true,enhSeries:true,setupDone:false,vf:{}},store.get('settings',{})),
   favs:new Set(store.get('favs',[])),pfavs:new Set(store.get('pfavs',[])),unlocked:false,tracks:store.get('tracks',{}),anime:store.get('anime',{}),locks:store.get('locks',{}),noTrack:new Set(store.get('noTrack',[])),dls:store.get('dls',[]),recents:store.get('recents',[]),resume:store.get('resume',{}),hidden:store.get('hidden',{}),
   live:[],movies:[],series:[],epg:{},epgNames:{},info:null,serverTz:null,gOrder:null,meta:{},idx:null,qsel:{},subsFound:{},
   screen:'tv',cur:null,stack:[],
@@ -430,6 +430,10 @@ const gName=(k,g)=>(isLockedG(k,g)?(S.gOpen.has(gKey(k,g))?'🔓 ':'🔒 '):'')+
 function lockAllGroups(){S.gOpen.clear();for(const k of ['movies','series'])if(S.vodGroup[k]&&isLockedG(k,S.vodGroup[k]))S.vodGroup[k]='__all';if(S.tvGroup&&isLockedG('live',S.tvGroup)){S.tvGroup='__all';S.ch=filterLive()}}
 const visible=it=>(!isPriv(it.key)||S.unlocked)&&!gLocked(kindOf(it),it.group);
 const pl=()=>S.playlists.find(p=>p.id===S.active);
+/* which subscription does this item come from? (keys are '<playlistId>|…'); falls back to the active one */
+const plOf=it=>{const id=it&&it.key?String(it.key).split('|')[0]:null;return (id&&S.playlists.find(p=>p.id===id))||pl()};
+const plName=it=>{const p=plOf(it);return p&&S.playlists.length>1?p.name:''};
+const mergeOn=()=>!!S.settings.merge&&S.playlists.length>1;
 const NOCAT=()=>L('بدون تصنيف','Uncategorized');
 
 let tT;function toast(m,ms=3500,act){const t=$('#toast');t.textContent=m;t.onclick=act?()=>{t.classList.remove('show');act()}:null;t.style.cursor=act?'pointer':'';t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),ms)}
@@ -568,7 +572,7 @@ function tzParts(t,tz){const o={year:'numeric',month:'2-digit',day:'2-digit',hou
   try{p=new Intl.DateTimeFormat('en-GB',Object.assign({timeZone:tz||undefined},o)).formatToParts(new Date(t))}catch(e){p=new Intl.DateTimeFormat('en-GB',o).formatToParts(new Date(t))}
   const g=k=>(p.find(x=>x.type===k)||{}).value;return{Y:g('year'),m:g('month'),d:g('day'),H:g('hour'),M:g('minute'),S:g('second')}}
 function catchupUrl(ch,p){
-  const P=pl();const st=Math.floor(p.st/1000),en=Math.floor(p.en/1000),now=Math.floor(Date.now()/1000),dur=en-st;
+  const P=plOf(ch);const st=Math.floor(p.st/1000),en=Math.floor(p.en/1000),now=Math.floor(Date.now()/1000),dur=en-st;
   if(P&&P.type==='xtream'){const z=tzParts(p.st,S.serverTz);return `${P.server}/timeshift/${enc(P.user)}/${enc(P.pass)}/${Math.ceil(dur/60)}/${z.Y}-${z.m}-${z.d}:${z.H}-${z.M}/${ch.id}.ts`}
   const z=tzParts(p.st,'UTC');
   const fill=s=>s.replace(/\{duration:(\d+)\}/g,(x,k)=>Math.round(dur/ +k)).replace(/\{utc\}|\$\{start\}|\{start\}/g,st).replace(/\{utcend\}|\$\{end\}|\{end\}/g,en).replace(/\{lutc\}|\$\{now\}|\{now\}|\$\{timestamp\}|\{timestamp\}/g,now).replace(/\{duration\}|\$\{duration\}/g,dur).replace(/\{offset\}|\$\{offset\}/g,now-st).replace(/\{Y\}/g,z.Y).replace(/\{m\}/g,z.m).replace(/\{d\}/g,z.d).replace(/\{H\}/g,z.H).replace(/\{M\}/g,z.M).replace(/\{S\}/g,z.S);
@@ -958,16 +962,28 @@ async function loadActive(){
   Object.assign(S,{playing:null,catchup:null,vod:null,pm:false,side:null,live:[],movies:[],series:[],epg:{},epgNames:{},info:null,serverTz:null,gOrder:null,meta:{},idx:null,error:null,ch:[],gRow:0,gp:null,epgUrl:''});
   syncStage();if(!P){render();return}
   S.loading=true;render();
-  try{let epgUrl=P.epgUrl||'';
-    if(P.type==='xtream')epgUrl=await loadXtream(P);
-    else{const txt=P.type==='file'?await idb.get('file_'+P.id):await fetchText(P.url);
-      if(!txt)throw new Error(L('ملف القائمة غير موجود، أضفه من جديد','Playlist file not found — please add it again'));if(!/#EXTINF/i.test(txt))throw new Error(L('هذا ليس ملف قائمة تشغيل صالح','This isn\'t a valid playlist file'));
-      const r=parseM3U(txt);Object.assign(S,buildM3U(r.items,P.id));epgUrl=epgUrl||r.epg}
+  try{let epgUrl='';
+    const loadOne=async Q=>{let eu=Q.epgUrl||'';
+      if(Q.type==='xtream')eu=await loadXtream(Q);
+      else{const txt=Q.type==='file'?await idb.get('file_'+Q.id):await fetchText(Q.url);
+        if(!txt)throw new Error(L('ملف القائمة غير موجود، أضفه من جديد','Playlist file not found — please add it again'));if(!/#EXTINF/i.test(txt))throw new Error(L('هذا ليس ملف قائمة تشغيل صالح','This isn\'t a valid playlist file'));
+        const r=parseM3U(txt);Object.assign(S,buildM3U(r.items,Q.id));eu=eu||r.epg}
+      return eu};
+    if(mergeOn()){
+      // every subscription, active one first; one failing account must not take the others down
+      const order=[P,...S.playlists.filter(q=>q.id!==P.id)];const acc={live:[],movies:[],series:[],gOrder:{live:[],movies:[],series:[]},epgs:[],fails:[]};let info=null,tz=null;
+      for(const Q of order){try{const eu=await loadOne(Q);acc.live.push(...S.live);acc.movies.push(...S.movies);acc.series.push(...S.series);if(eu)acc.epgs.push(eu);
+          if(S.gOrder)for(const k of ['live','movies','series'])for(const g of S.gOrder[k]||[])if(!acc.gOrder[k].includes(g))acc.gOrder[k].push(g);
+          if(Q.id===P.id){info=S.info;tz=S.serverTz}}catch(e){acc.fails.push(Q.name+': '+friendlyErr(e))}}
+      if(acc.fails.length===order.length)throw new Error(acc.fails.join(' · '));
+      S.live=acc.live;S.movies=acc.movies;S.series=acc.series;S.gOrder=acc.gOrder;S.info=info;S.serverTz=tz;epgUrl=acc.epgs[0]||'';S.epgUrls=acc.epgs;
+      if(acc.fails.length)setTimeout(()=>toast(L('⚠️ ما قدرت أحمّل: ','⚠️ Couldn\'t load: ')+acc.fails.join(' · '),6000),1200);
+    }else{epgUrl=await loadOne(P);S.epgUrls=null}
     buildIndex();S.loading=false;S.tvGroup='__all';S.vodGroup={movies:'__all',series:'__all'};S.vf=0;S.ch=filterLive();S.gT=floor30(Date.now())-1800e3;S.gFocusT=null;
     const last=store.get('lastCh',null);const li=S.ch.findIndex(c=>c.key===last);S.gRow=li>=0?li:0;
     toast(L(`تم التحميل: ${arN(S.live.length)} قناة · ${arN(S.movies.length)} فيلم · ${arN(S.series.length)} مسلسل`,`Loaded: ${S.live.length} channels · ${S.movies.length} movies · ${S.series.length} series`));
     render();if(!S.settings.setupDone)setTimeout(openSetup,600);if(S.settings.autoplay&&li>=0&&S.screen==='tv')playChannel(S.ch[li]);
-    loadEPG(epgUrl);
+    loadEPG(S.epgUrls&&S.epgUrls.length?S.epgUrls.join(','):epgUrl);
   }catch(e){S.loading=false;S.error=friendlyErr(e);render()}
 }
 function friendlyErr(e){const m=(e&&e.message)||'';if(e instanceof TypeError||/Failed to fetch|NetworkError|Load failed/i.test(m))return L('تعذّر الوصول للسيرفر. تأكد من الرابط واتصال الإنترنت.','Couldn\'t reach the server. Check the address and your internet connection.');return m||L('خطأ غير معروف','Unknown error')}
@@ -991,7 +1007,7 @@ function tmdb(path,params={}){const key=S.settings.tmdb.trim();if(!key)return Pr
   const pr=fetch(u,{headers}).then(r=>{if(!r.ok)throw new Error('tmdb '+r.status);return r.json()});tcache.set(u,pr);pr.catch(()=>tcache.delete(u));return pr}
 async function getMeta(item){
   if(S.meta[item.key])return S.meta[item.key];
-  const type=item.kind==='movie'?'movie':'tv';const P=pl();
+  const type=item.kind==='movie'?'movie':'tv';const P=plOf(item);
   const m={title:item.title||item.name,poster:item.logo,backdrop:'',plot:item.plot||'',year:item.year,rating:item.rating,genre:'',duration:'',director:'',cast:[],castStr:'',trailer:'',country:'',age:'',origTitle:'',seasons:null,tmdbId:item.tmdb||null};
   if(P&&P.type==='xtream'){try{
     if(type==='movie'){const d=await xt(P,'get_vod_info','&vod_id='+item.id);const i=(d&&d.info)||{};
@@ -1356,7 +1372,7 @@ function seriesTarget(it,m){const flat=flatEps(m);if(!flat.length)return null;co
   return flat[0]}
 function epTitle(e,it){let t=String(e.title||'');const mm=t.match(/S\d+\s*E\d+\s*[-–:]\s*(.+)$/i);if(mm)t=mm[1];if(!t.trim()||norm(t)===norm(it.name)||/S\d+\s*E\d+\s*$/i.test(t))t=L('الحلقة ','Episode ')+arN(e.episode_num);return t}
 const SE=(s,e)=>L(`م${arN(s)} ح${arN(e)}`,`S${s} E${e}`);
-function playEpisode(it,m,season,e,fromStart){const P=pl();const key=epKey(it,e);const r=S.resume[key];
+function playEpisode(it,m,season,e,fromStart){const P=plOf(it);const key=epKey(it,e);const r=S.resume[key];
   const url=e.url||`${P.server}/series/${enc(P.user)}/${enc(P.pass)}/${e.id}.${e.container_extension||'mp4'}`;
   const flat=flatEps(m);const i=flat.findIndex(x=>x.ep===e);const nx=flat[i+1];
   playVod({subItem:it,subSeason:season,subEp:e.episode_num,url,key,seriesKey:it.key,season,epNum:e.episode_num,title:`${m.title||it.title} · ${SE(season,e.episode_num)}`,sub:epTitle(e,it),start:(!fromStart&&r&&!r.done)?r.pos:0,next:nx?()=>playEpisode(it,m,nx.season,nx.ep,true):null})}
@@ -1370,8 +1386,8 @@ function vmOpen(){return new Promise(res=>{try{const r=indexedDB.open('sanad-met
 function vmSave(){if(!VM.db||!VM.dirty.size)return;try{const st=VM.db.transaction('vod','readwrite').objectStore('vod');for(const [k,v] of VM.dirty)st.put(v,k);VM.dirty.clear()}catch(e){}}
 setInterval(vmSave,3000);
 function vmPut(it,v){VM.map.set(it.key,v);VM.dirty.set(it.key,v);VM.ver++;it._gen=undefined;it._ar=undefined}
-function enrich(items,cap=1500){const P=pl();if(!P||P.type!=='xtream')return;let n=0;for(const it of items){if(n>=cap)break;if((it.kind!=='movie'&&it.kind!=='series')||(it.kind==='series'&&it.genre&&it.cast)||VM.map.has(it.key)||VM.qs.has(it.key))continue;VM.qs.add(it.key);VM.q.push(it);VM.total++;n++}if(n)pumpVM()}
-function pumpVM(){const P=pl();while(VM.busy<3&&VM.q.length){const it=VM.q.shift();VM.busy++;
+function enrich(items,cap=1500){let n=0;for(const it of items){if(n>=cap)break;const P=plOf(it);if(!P||P.type!=='xtream')continue;if((it.kind!=='movie'&&it.kind!=='series')||(it.kind==='series'&&it.genre&&it.cast)||VM.map.has(it.key)||VM.qs.has(it.key))continue;VM.qs.add(it.key);VM.q.push(it);VM.total++;n++}if(n)pumpVM()}
+function pumpVM(){while(VM.busy<3&&VM.q.length){const it=VM.q.shift();const P=plOf(it);VM.busy++;
   (it.kind==='series'?xt(P,'get_series_info','&series_id='+it.seriesId):xt(P,'get_vod_info','&vod_id='+it.id)).then(d=>{const i=(d&&d.info)||{};vmPut(it,{g:String(i.genre||'').slice(0,160),c:String(i.cast||i.actors||'').slice(0,700),r:i.rating&&+i.rating?(+i.rating).toFixed(1):'',y:yearOf(i.releasedate||i.release_date||i.releaseDate)||0,d:String(i.director||'').slice(0,120),t:Date.now()})})
   .catch(()=>{VM.map.set(it.key,{t:Date.now(),e:1})}).finally(()=>{VM.busy--;VM.done++;VM.qs.delete(it.key);if(!VM.q.length&&!VM.busy){VM.done=0;VM.total=0}setTimeout(pumpVM,90);vmNotify()})}}
 let vmLast=0;function vmNotify(){clearTimeout(VM.nt);const go=()=>{vmLast=Date.now();VM.listeners.forEach(f=>{try{f()}catch(e){}})};if(Date.now()-vmLast>1500)go();else VM.nt=setTimeout(go,1600)}
@@ -1430,7 +1446,9 @@ function vodFiltered(kind){const arr=kind==='movies'?S.movies:S.series;const g=S
   const qf=S.vodQ&&S.vodQ[kind];if(qf)r=r.filter(x=>resLabel(x)===qf);
   {const f=vfOf(kind);if(f.g.length||(kind==='movies'&&(f.r||f.sort==='rating')))enrich(r.filter(x=>!VM.map.has(x.key)));}
   r=vfApply(kind,r,g);
-  const q=(S.vodSearch[kind]||'').trim().toLowerCase();if(q)r=r.filter(x=>x.name.toLowerCase().includes(q));return r}
+  const q=(S.vodSearch[kind]||'').trim().toLowerCase();if(q)r=r.filter(x=>x.name.toLowerCase().includes(q));return mergeDedupe(r)}
+/* merged accounts: the same title from two subscriptions is one card (the other copy stays reachable as a "version") */
+function mergeDedupe(r){if(!mergeOn())return r;const seen=new Set();return r.filter(x=>{const k=norm(x.name)+'|'+(x.kind==='movie'?(x.year||''):'');if(seen.has(k))return false;seen.add(k);return true})}
 function posterHTML(it,attr,foc){const r=it.kind==='movie'?S.resume[it.key]:null;const prog=r?(r.done?100:Math.round(r.pos/r.dur*100)):0;const t=it.title||it.name;
   const sr=it.kind==='series'?S.resume[it.key]:null;const sub=sr&&sr.season?SE(sr.season,sr.ep):(it.year?arN(it.year):'&nbsp;');const q=qualityOf(it);
   if(it.kind==='movie'&&it.url)queueProbe(it);const inCont=(S.screen==='movies'||S.screen==='series')&&S.vodGroup[S.screen]==='__cont'&&/data-p=/.test(attr);return `<div class="pc${foc?' foc':''}" ${attr} data-key="${esc(it.key)}"><div class="im">${inCont?`<span class="rmx" data-rmc="1" title="${L('حذف من متابعة المشاهدة','Remove from Continue watching')}">✕</span>`:''}<span class="ini">${initials(t)}</span>${it.logo?`<img src="${esc(it.logo)}" loading="lazy" alt="" onerror="this.remove()">`:''}${it.rating&&+it.rating?`<span class="rt">★ ${arN(it.rating)}</span>`:''}${(()=>{const rl=resLabel(it);return (rl?`<span class="q4 ${resCls(rl)}">${arN(rl)}</span>`:'')+hdrChip(it)})()}${(()=>{const k=arKind(it);return k===2?`<span class="arb a2">${L('عربي','Arabic')}</span>`:k===1?`<span class="arb a1">${L('مترجم','Subtitled')}</span>`:''})()}${S.favs.has(it.key)?'<span class="fv">★</span>':isPriv(it.key)?'<span class="fv">🔒</span>':''}${it.kind==='movie'?abHTML(it):''}${prog?`<div class="pr"><i style="width:${prog}%"></i></div>`:''}</div><div class="nm" title="${esc(it.name)}">${esc(t)}</div><div class="yr">${sub}</div></div>`}
@@ -1476,7 +1494,7 @@ async function renderDetail(){const it=S.cur.item;const tok=S.detTok=Math.random
 function refreshDetail(focus){if(S.screen!=='detail')return;const it=S.cur.item;const d=$('#det');const sc=d.scrollTop;d.innerHTML=detailHTML(it,S.meta[it.key]||null);d.scrollTop=sc;bindDetail(it,focus)}
 function detailHTML(it,m0){const loading=!m0;const m=m0||{title:it.title||it.name,poster:it.logo,plot:it.plot||'',year:it.year,rating:it.rating,cast:[]};const isS=it.kind==='series';let btns='',qrow='';
   if(!isS){const vs=movieVersions(it);const ver=selVersion(it);const r=S.resume[ver.key]||S.resume[it.key];
-    if(vs.length>1){let n=0;const unk=vs.filter(v=>!qualityOf(v).q).length;qrow=`<div class="qrow">${L('الجودة:','Quality:')} ${vs.map((v,i)=>{const q=qualityOf(v).q||(L('عادية','Standard')+(unk>1?' '+arN(++n):''));return `<button class="qv${v.key===ver.key?' on':''}" data-qv="${i}">${q}</button>`}).join('')}</div>`}
+    if(vs.length>1){let n=0;const unk=vs.filter(v=>!qualityOf(v).q).length;qrow=`<div class="qrow">${L('الجودة:','Quality:')} ${vs.map((v,i)=>{const q=(qualityOf(v).q||(L('عادية','Standard')+(unk>1?' '+arN(++n):'')))+(plName(v)?' · '+esc(plName(v)):'');return `<button class="qv${v.key===ver.key?' on':''}" data-qv="${i}">${q}</button>`}).join('')}</div>`}
     if(r&&!r.done&&r.pos>30)btns+=`<button class="bt p" data-d="resume">▶ ${L('متابعة من','Resume from')} ${fmtSec(r.pos)}</button><button class="bt" data-d="play">⟲ ${L('من البداية','From the start')}</button>`;else btns+=`<button class="bt p" data-d="play">▶ ${L('تشغيل','Play')}${qualityOf(ver).q?' · '+qualityOf(ver).q:''}</button>`}
   else{const t=seriesTarget(it,m);if(t)btns+=`<button class="bt p" data-d="splay">▶ ${t.resume?L('متابعة','Resume'):L('تشغيل','Play')} ${L(`الموسم ${arN(t.season)} الحلقة ${arN(t.ep.episode_num)}`,`S${t.season} E${t.ep.episode_num}`)}</button>`;else if(loading)btns+=`<button class="bt p" disabled>${L('جاري تحميل الحلقات…','Loading episodes…')}</button>`}
   btns+=`<button class="bt" data-d="fav">${S.favs.has(it.key)?'★ '+L('في المفضلة','In favorites'):'☆ '+L('أضف للمفضلة','Add to favorites')}</button>`;
@@ -1779,7 +1797,7 @@ async function doSearch(){const el=$('#sres');if(!el)return;const q=(S.sq||'').t
   const now=Date.now();const chs=S.live.filter(c=>visible(c)&&c.name.toLowerCase().includes(q)).slice(0,40);
   const prs=[];outer:for(const c of S.live){for(const p of progs(c)){if(p.en>now-3*864e5&&p.t.toLowerCase().includes(q)){prs.push({c,p});if(prs.length>=80)break outer}}}
   prs.sort((a,b)=>{const an=a.p.st<=now&&a.p.en>now,bn=b.p.st<=now&&b.p.en>now;if(an!==bn)return an?-1:1;return Math.abs(a.p.st-now)-Math.abs(b.p.st-now)});prs.length=Math.min(prs.length,40);
-  const sf=x=>visible(x)&&x.name.toLowerCase().includes(q);const mv=arSort(vfApply('movies',S.movies.filter(sf),'')).slice(0,40),sr=arSort(vfApply('series',S.series.filter(sf),'')).slice(0,40);enrich(mv);
+  const sf=x=>visible(x)&&x.name.toLowerCase().includes(q);const mv=mergeDedupe(arSort(vfApply('movies',S.movies.filter(sf),''))).slice(0,40),sr=mergeDedupe(arSort(vfApply('series',S.series.filter(sf),''))).slice(0,40);enrich(mv);
   S.sRes={chs,prs,mv,sr,ppl:[]};const sec=(t,b)=>`<div class="sec"><h3>${t}</h3>${b}</div>`;let h='';
   if(chs.length)h+=sec(L('القنوات','Channels'),`<div class="schs">${chs.map((c,i)=>{const p=nowP(c);return `<button class="sch" data-sc="${i}">${logo(c.logo,c.name)}<div><b>${esc(c.name)}</b><small>${esc(p?p.t:c.group)}</small></div></button>`}).join('')}</div>`);
   if(prs.length)h+=sec(L('البرامج','Programmes'),`<div class="sprs">${prs.map((x,i)=>`<button class="spr" data-sp="${i}"><span class="tm">${dayName(x.p.st)} ${fmtT(x.p.st)}</span><div><b>${esc(x.p.t)}</b><small>${esc(x.c.name)}</small></div>${x.p.st<=now&&x.p.en>now?`<span class="tag live">${L('مباشر','Live')}</span>`:canArc(x.c,x.p)?'<span class="tag arc">⟲</span>':''}</button>`).join('')}</div>`);
@@ -1806,6 +1824,7 @@ function setContent(c){const P=pl();
     return `<h3>${L('قوائم التشغيل','Playlists')}</h3><p class="sd">${L('تقدر تضيف أكثر من اشتراك وتتنقل بينها.','You can add several subscriptions and switch between them.')}</p>
     ${S.playlists.map(p=>`<div class="opt"><div class="f"><b>${esc(p.name)} ${p.id===S.active?`<span class="tag arc">${L('نشطة','Active')}</span>`:''}</b><small>${p.type==='xtream'?L('إكستريم كودز','Xtream Codes')+' · '+esc(p.server):p.type==='url'?L('رابط','URL')+' · '+esc(p.url):L('ملف من الجهاز','Local file')}</small></div>${p.id!==S.active?`<button class="btn" data-pa="act|${p.id}">${L('تفعيل','Activate')}</button>`:`<button class="btn" data-pa="reload|${p.id}">${L('تحديث','Refresh')}</button>`}<button class="btn" data-pa="edit|${p.id}">${L('تعديل','Edit')}</button><button class="btn d" data-pa="del|${p.id}">${L('حذف','Delete')}</button></div>`).join('')||`<p class="sd">${L('ما في قوائم مضافة.','No playlists yet.')}</p>`}
     <div class="row2"><button class="btn p" data-pa="add|">+ ${L('إضافة قائمة تشغيل','Add playlist')}</button></div>
+    ${S.playlists.length>1?optSw('merge',L('🔗 دمج كل الاشتراكات','🔗 Merge all subscriptions'),L('تطلع القنوات والأفلام والمسلسلات من كل الحسابات في قوائم وحدة. الفيلم الموجود في حسابين يظهر مرة وحدة وتختار النسخة من أي حساب.','Channels, movies and series from every account appear together. A film present in two accounts shows once — pick the copy you want.')):''}
     ${S.info?`<h3 class="mt">${L('معلومات الاشتراك','Subscription info')}</h3><div class="opt"><div class="f"><b>${L('الحالة: ','Status: ')}${esc(statusName(S.info.status))}</b><small>${exp?L('ينتهي في ','Expires on ')+exp:L('بدون تاريخ انتهاء','No expiry date')} · ${L(`الاتصالات المستخدمة ${arN(S.info.active_cons||0)} من ${arN(S.info.max_connections||'-')}`,`Connections in use: ${S.info.active_cons||0} of ${S.info.max_connections||'-'}`)}</small></div></div>`:''}`}
   if(c==='epg'){const n=S.live.filter(ch=>progs(ch).length).length;
     return `<h3>${L('دليل البرامج','TV guide')}</h3><p class="sd">${S.epgLoading?'<span class="spin sm"></span> '+L('جاري التحميل…','Loading…'):L(`القنوات اللي لها دليل: ${arN(n)} من ${arN(S.live.length)}`,`Channels with guide data: ${n} of ${S.live.length}`)+(S.epgAt?L(' · آخر تحديث الساعة ',' · Last updated at ')+fmtT(S.epgAt):'')}</p>
@@ -1879,7 +1898,7 @@ function settingsClick(e){const t=e.target.closest('[data-sc2],[data-pa],[data-t
   if(t.dataset.lang){setLang(t.dataset.lang);return}
   if(t.dataset.sc2){S.setCat=t.dataset.sc2;renderSettings();return}
   if(t.dataset.pa){const [a,id]=t.dataset.pa.split('|');if(a==='add')openAdd();else if(a==='edit')openAdd(id);else if(a==='act')activate(id);else if(a==='reload'){S.screen='tv';loadActive()}else if(a==='del')delPl(id);return}
-  if(t.dataset.tg){const k=t.dataset.tg;S.settings[k]=!S.settings[k];saveSet();renderSettingsC();return}
+  if(t.dataset.tg){const k=t.dataset.tg;S.settings[k]=!S.settings[k];saveSet();renderSettingsC();if(k==='merge'){toast(S.settings.merge?L('جاري دمج الاشتراكات…','Merging subscriptions…'):L('رجعنا للاشتراك النشط بس','Back to the active subscription only'));loadActive()}return}
   if(t.dataset.hgt){S.hgTab=t.dataset.hgt;renderSettingsC();return}
   if(t.dataset.hg!=null){toggleHidden(S.hgTab||'live',t.dataset.hg);renderSettingsC();return}
   const a=t.dataset.act;const P=pl();
