@@ -53,6 +53,20 @@ final class SPPlayerViewController: UIViewController, AVPlayerItemLegibleOutputP
         updateBadge()
     }
     let mtk = MTKView()
+    // HDR: AVPlayerLayer renders HDR10 / HLG / Dolby Vision natively; the Metal enhancer only sees SDR frames
+    let hdrLayer = AVPlayerLayer()
+    var hdr = false
+    func nameHdr(_ n: String) -> Bool { n.range(of: #"\b(hdr10\+?|hdr|dolby ?vision|dovi|dv|hlg)\b"#, options: [.regularExpression, .caseInsensitive]) != nil }
+    func goHdr() {
+        guard !hdr else { return }
+        hdr = true
+        hdrLayer.player = player
+        hdrLayer.videoGravity = .resizeAspect
+        hdrLayer.isHidden = false
+        mtk.isHidden = true
+        badgeExtra = "🌈 HDR — عرض أصلي بدون معالجة"
+        updateBadge()
+    }
     var renderer: SPEnhanceRenderer?
     var link: CADisplayLink?
     var timeObs: Any?
@@ -113,6 +127,10 @@ final class SPPlayerViewController: UIViewController, AVPlayerItemLegibleOutputP
         mtk.frame = view.bounds
         mtk.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(mtk)
+        hdrLayer.frame = view.bounds
+        hdrLayer.isHidden = true
+        view.layer.insertSublayer(hdrLayer, at: 0)
+        if nameHdr(str("title")) || nameHdr(str("url")) { goHdr() }
         renderer = SPEnhanceRenderer(view: mtk)
         mtk.delegate = renderer
         renderer?.p.mode = Int(num("enh"))
@@ -216,6 +234,7 @@ final class SPPlayerViewController: UIViewController, AVPlayerItemLegibleOutputP
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         top.layer.sublayers?.first?.frame = top.bounds
+        CATransaction.begin(); CATransaction.setDisableActions(true); hdrLayer.frame = view.bounds; CATransaction.commit()
     }
 
     @objc func toggleUI() { if listView != nil { closeList(); return }; uiShown ? hideUI() : showUI() }
@@ -262,6 +281,11 @@ final class SPPlayerViewController: UIViewController, AVPlayerItemLegibleOutputP
             spinner.stopAnimating(); retries = 0
             if at > 1 && !live { player.seek(to: CMTime(seconds: at, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) }
             Task { await self.selectTracks(it) }
+            Task {
+                if let tr = try? await it.asset.loadTracks(withMediaType: .video).first, let ch = try? await tr.load(.mediaCharacteristics), ch.contains(.containsHDRVideo) {
+                    await MainActor.run { self.goHdr() }
+                }
+            }
         } else if it.status == .failed {
             let e = it.error as NSError?
             if retries < 2 { retries += 1; let pos = player.currentTime().seconds; DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { self.reload(pos.isFinite ? pos : 0) }; return }
@@ -409,7 +433,7 @@ final class SPPlayerViewController: UIViewController, AVPlayerItemLegibleOutputP
     }
 
     func updateBadge() {
-        guard let p = renderer?.p else { badgeL.text = badgeExtra; return }
+        guard let p = renderer?.p, !hdr else { badgeL.text = badgeExtra; return }
         var b = ""
         if p.inH > 0 { b += "\(p.inH)p"; if p.mode != 1 && p.outH > p.inH { b += " → \(p.outH)p" } }
         if p.mode == 1 { b += "  · بدون تحسين" } else {

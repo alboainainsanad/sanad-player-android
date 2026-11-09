@@ -38,6 +38,8 @@ import androidx.media3.common.TrackSelectionParameters;
 import androidx.media3.common.text.Cue;
 import androidx.media3.common.text.CueGroup;
 import androidx.media3.common.TrackSelectionOverride;
+import androidx.media3.common.ColorInfo;
+import androidx.media3.common.Format;
 import com.google.mlkit.common.model.DownloadConditions;
 import com.google.mlkit.nl.translate.TranslateLanguage;
 import com.google.mlkit.nl.translate.Translation;
@@ -301,9 +303,13 @@ public class PlayerActivity extends Activity {
         .setMediaSourceFactory(new DefaultMediaSourceFactory(ds, ex))
         .setLoadControl(lc)
         .build();
-    List<Effect> fx = new ArrayList<>();
-    fx.add(new EnhanceEffect(ep));
-    try { player.setVideoEffects(fx); } catch (Throwable t) { /* effects unsupported: play plain */ }
+    hdrByName = nameHdr(opts.optString("title", "")) || nameHdr(opts.optString("url", ""));
+    if (hdrByName) hdr = true;
+    if (!hdr) {
+      List<Effect> fx = new ArrayList<>();
+      fx.add(new EnhanceEffect(ep));
+      try { player.setVideoEffects(fx); } catch (Throwable t) { /* effects unsupported: play plain */ }
+    }
     TrackSelectionParameters.Builder tp = player.getTrackSelectionParameters().buildUpon()
         .setPreferredTextLanguage(opts.optString("prefSub", "ar"));
     String pa = opts.optString("prefAudio", "");
@@ -325,7 +331,7 @@ public class PlayerActivity extends Activity {
         errTv.setText("تعذّر التشغيل\n" + e.getErrorCodeName().replace("ERROR_CODE_", "") + "\n\nاضغط لإعادة المحاولة");
         errTv.setVisibility(View.VISIBLE);
       }
-      @Override public void onTracksChanged(Tracks tracks) { checkSubs(tracks); }
+      @Override public void onTracksChanged(Tracks tracks) { checkHdr(tracks); checkSubs(tracks); }
       @Override public void onVideoSizeChanged(VideoSize vs) { updateBadge(); }
       @Override public void onCues(CueGroup cg) {
         if (!mtOn) return;
@@ -416,6 +422,33 @@ public class PlayerActivity extends Activity {
   }
 
   String badgeExtra = "";
+  // ---- HDR: play natively (no GL effects) so HDR10 / HLG / Dolby Vision reach the screen untouched ----
+  boolean hdr = false, hdrByName = false, rebuilding = false;
+  static boolean nameHdr(String n) { return n != null && java.util.regex.Pattern.compile("\\b(hdr10\\+?|hdr|dolby ?vision|dovi|dv|hlg)\\b", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(n).find(); }
+  static boolean isHdr(Format f) {
+    if (f == null) return false;
+    ColorInfo c = f.colorInfo;
+    if (c != null && (c.colorTransfer == C.COLOR_TRANSFER_ST2084 || c.colorTransfer == C.COLOR_TRANSFER_HLG)) return true;
+    String cs = f.codecs == null ? "" : f.codecs.toLowerCase();
+    return cs.startsWith("dvhe") || cs.startsWith("dvh1") || cs.startsWith("dav1");
+  }
+  void checkHdr(Tracks tracks) {
+    if (hdr || rebuilding || player == null) return;
+    for (Tracks.Group g : tracks.getGroups()) {
+      if (g.getType() != C.TRACK_TYPE_VIDEO) continue;
+      for (int i = 0; i < g.length; i++) if (g.isTrackSelected(i) && isHdr(g.getTrackFormat(i))) { hdr = true; break; }
+    }
+    if (!hdr) return;
+    // effects were attached → rebuild the player without them, resume where we were
+    rebuilding = true;
+    long pos = player.getCurrentPosition();
+    ui.post(() -> {
+      try { player.release(); } catch (Throwable t) {}
+      buildPlayer();
+      if (live) startChannel(); else startVod(pos);
+      rebuilding = false;
+    });
+  }
   // ---- on-device machine translation of subtitles (Google ML Kit) ----
   Translator translator;
   boolean mtOn = false, mtReady = false;
@@ -526,6 +559,13 @@ public class PlayerActivity extends Activity {
   void updateBadge() {
     if (badgeTv == null) return;
     StringBuilder b = new StringBuilder();
+    if (hdr) {
+      Format vf = player == null ? null : player.getVideoFormat();
+      if (vf != null && vf.height > 0) b.append(vf.height).append("p ");
+      b.append("· 🌈 HDR — عرض أصلي بدون معالجة");
+      if (!badgeExtra.isEmpty()) b.append("  · ").append(badgeExtra);
+      badgeTv.setText(b); return;
+    }
     if (ep.inH > 0) {
       b.append(ep.inH).append("p");
       if (ep.mode != 1 && ep.outH > ep.inH) b.append(" → ").append(ep.outH).append("p");

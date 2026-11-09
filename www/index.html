@@ -239,6 +239,7 @@ body.pm #stage.ui.lv #liveBar,body.pm #stage.ui.vd #vodBar{display:block}
 .pc .nm{font-size:13.5px;font-weight:700;margin-top:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pc .yr{font-size:12px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pc .rt{position:absolute;top:7px;left:7px;background:#000c;color:var(--gold);font-size:11.5px;padding:2px 7px;border-radius:6px;font-weight:700}
+.pc .hdr{position:absolute;top:8px;left:7px;background:linear-gradient(90deg,#ff6a00,#ffd000 50%,#00d4ff);color:#000;font-size:10px;padding:1px 6px;border-radius:5px;font-weight:900;letter-spacing:.5px}.tag.hdr{background:linear-gradient(90deg,#ff6a00,#ffd000 50%,#00d4ff);color:#000;font-weight:900}
 .pc .q4{position:absolute;bottom:8px;left:7px;background:linear-gradient(90deg,#f5c518,#ffdd6b);color:#1b1400;font-size:11px;padding:1px 7px;border-radius:5px;font-weight:800}
 .pc .fv{position:absolute;top:5px;right:8px;color:var(--gold);font-size:17px;text-shadow:0 0 5px #000}
 .pc .rmx{position:absolute;top:6px;left:6px;width:28px;height:28px;border-radius:50%;background:#000c;color:#fff;font-size:15px;display:none;place-items:center;z-index:2;border:1px solid #ffffff40}.pc:hover .rmx,.pc.foc .rmx{display:grid}.pc .rmx:hover{background:var(--red)}
@@ -431,7 +432,7 @@ const visible=it=>(!isPriv(it.key)||S.unlocked)&&!gLocked(kindOf(it),it.group);
 const pl=()=>S.playlists.find(p=>p.id===S.active);
 const NOCAT=()=>L('بدون تصنيف','Uncategorized');
 
-let tT;function toast(m,ms=3500){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),ms)}
+let tT;function toast(m,ms=3500,act){const t=$('#toast');t.textContent=m;t.onclick=act?()=>{t.classList.remove('show');act()}:null;t.style.cursor=act?'pointer':'';t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),ms)}
 const fmtT=t=>new Date(t).toLocaleTimeString(LOC(),{hour:'numeric',minute:'2-digit',hourCycle:S.settings.clock24?'h23':'h12'});
 function dayDiff(t){const a=new Date(t),b=new Date();return Math.round((new Date(a.getFullYear(),a.getMonth(),a.getDate())-new Date(b.getFullYear(),b.getMonth(),b.getDate()))/864e5)}
 function dayName(t){const k=dayDiff(t);return k===0?L('اليوم','Today'):k===1?L('غداً','Tomorrow'):k===-1?L('أمس','Yesterday'):new Date(t).toLocaleDateString(LOC(),{weekday:'long'})}
@@ -455,9 +456,13 @@ const ytKey=s=>{s=String(s||'');const m=s.match(/(?:v=|youtu\.be\/|embed\/)([\w-
 const statusName=s=>LANG==='ar'?({Active:'فعّال',Expired:'منتهي',Banned:'محظور',Disabled:'معطّل'}[s]||s||''):(s||'');
 function resLabel(it){const t=S.tracks[it.key];let h=0;if(t&&t.v)h=+(String(t.v).split('×')[1])||0;
   if(h)return h>=2000?'4K':h>=1380?'2K':h>=1000?'1080p':h>=690?'720p':h>=400?'480p':h+'p';
-  const r=qualityOf(it).r;return r===4?'4K':r===3?'1080p':r===2?'720p':r===1?'480p':''}
+  const r=Math.floor(qualityOf(it).r);return r===4?'4K':r===3?'1080p':r===2?'720p':r===1?'480p':''}
+const hdrChip=it=>isHdr(it)?`<span class="hdr">HDR</span>`:'';
 const resCls=l=>l==='4K'?'':l==='2K'?'q2':l==='1080p'?'q3':l==='720p'?'q1':'q0';
-function qualityOf(it){const s=((it.name||'')+' '+(it.group||'')).toLowerCase();
+const HDR_RE=/\b(hdr10\+?|hdr|dolby ?vision|dovi|dv|hlg)\b/i;
+function isHdr(it){if(!it)return false;const t=S.tracks&&S.tracks[it.key];if(t&&t.hdr!=null)return !!t.hdr;return HDR_RE.test((it.name||it.title||'')+' '+(it.group||''))}
+function qualityOf(it){const s=((it.name||'')+' '+(it.group||'')).toLowerCase();const q=qualityOf0(s);if(HDR_RE.test(s)){q.hdr=true;q.r+=0.5}return q}
+function qualityOf0(s){
   if(/\b(4k|uhd|2160p?)\b/.test(s))return{q:'4K',r:4};if(/\b(fhd|1080p?|full ?hd)\b/.test(s))return{q:'FHD',r:3};
   if(/\b(hd|720p?)\b/.test(s))return{q:'HD',r:2};if(/\b(sd|480p?|cam)\b/.test(s))return{q:'SD',r:1};return{q:'',r:0}}
 
@@ -655,7 +660,7 @@ const ENH={gl:null,ok:null,run:false,blocked:false,out:'',
     const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
     const mk=()=>{const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);return t};
     this.vt=mk();this.vt2=mk();this.ft=mk();this.fb=gl.createFramebuffer();this.gl=gl;this.fw=0;this.fh=0;return this.ok=true}catch(e){console.warn('enh',e);return this.ok=false}},
-  active(){return (!!enhLevel()||motionOn())&&!this.blocked&&this.ok!==false&&enhForKind(S.vod?(S.vod.seriesKey?'series':'movie'):'live')},
+  active(){if(S.vod&&isHdr(S.vod.it||S.vod))return false;return (!!enhLevel()||motionOn())&&!this.blocked&&this.ok!==false&&enhForKind(S.vod?(S.vod.seriesKey?'series':'movie'):'live')},
   hz:0,fps:0,iv:41.7,newFrame:false,haveFrame:false,t0:0,lastMT:-1,_rafT:0,_rafE:0,
   vfc(){const v=V();if(!v.requestVideoFrameCallback||this.vfcOn)return;this.vfcOn=true;const cb=(now,md)=>{this.newFrame=true;this.t0=performance.now();if(md&&this.lastMT>=0){const d=(md.mediaTime-this.lastMT)*1000/(v.playbackRate||1);if(d>5&&d<200)this.iv=this.iv*.7+d*.3}if(md)this.lastMT=md.mediaTime;this.fps=Math.round(1000/this.iv);v.requestVideoFrameCallback(cb)};v.requestVideoFrameCallback(cb)},
   reset(){this.blocked=false;this.out='';this.lastKey='';this.haveFrame=false;this.lastMT=-1;this.fps=0;$('#stage').classList.remove('enh')},
@@ -732,7 +737,7 @@ function saveTracks(){const ks=Object.keys(S.tracks);if(ks.length>3000)ks.slice(
 async function probeItem(it,url){if(!isApp()||S.tracks[it.key]||S.tracks[it.key]===null)return S.tracks[it.key];url=url||it.url;if(!url)return null;
   const r=await window.sanad.probe(url);if(r.error){console.warn('probe',r.error);return null}
   const st=r.streams||[];const vs=st.find(x=>x.type==='video');
-  const info={a:st.filter(x=>x.type==='audio').map(x=>({l:l3(x.lang),t:x.title||'',c:x.codec,ch:x.ch,i:x.i})),s:st.filter(x=>x.type==='subtitle').map(x=>({l:l3(x.lang),t:x.title||'',c:x.codec,i:x.i})),v:vs?`${vs.w}×${vs.h}`:'',fps:vs&&vs.fps?(()=>{const m=String(vs.fps).split('/');const f=m.length===2?(+m[0])/(+m[1]||1):+m[0];return f>0&&f<200?Math.round(f*100)/100:0})():0,d:+(r.format&&r.format.duration)||0,sz:+(r.format&&r.format.size)||0};
+  const info={a:st.filter(x=>x.type==='audio').map(x=>({l:l3(x.lang),t:x.title||'',c:x.codec,ch:x.ch,i:x.i})),s:st.filter(x=>x.type==='subtitle').map(x=>({l:l3(x.lang),t:x.title||'',c:x.codec,i:x.i})),v:vs?`${vs.w}×${vs.h}`:'',fps:vs&&vs.fps?(()=>{const m=String(vs.fps).split('/');const f=m.length===2?(+m[0])/(+m[1]||1):+m[0];return f>0&&f<200?Math.round(f*100)/100:0})():0,d:+(r.format&&r.format.duration)||0,sz:+(r.format&&r.format.size)||0,hdr:!!(vs&&(/smpte2084|arib-std-b67/i.test(vs.ct||'')||vs.dv||/^dvh[1e]$/i.test(vs.tag||''))),b10:!!(vs&&/10(le|be)?$/.test(vs.pf||''))};
   S.tracks[it.key]=info;saveTracks();return info}
 function queueProbe(it){if(!isApp()||!S.settings.autoProbe||!it||!it.url||S.tracks[it.key]!==undefined||probeQ.includes(it))return;probeQ.push(it);pumpProbe()}
 function pumpProbe(){while(probing<2&&probeQ.length){const it=probeQ.shift();if(S.tracks[it.key]!==undefined)continue;probing++;
@@ -787,6 +792,16 @@ async function osComSearch(item,ids,season,ep,langs){const key=(S.settings.osKey
   return ((d&&d.data)||[]).map(x=>{const a=x.attributes||{};const f=(a.files||[])[0];const fd=a.feature_details||{};return f&&{src:'OpenSubtitles+',lang:subLangCode(a.language),release:a.release||'',file:f.file_name||'',osFile:f.file_id,dl:+a.download_count||0,hi:!!a.hearing_impaired,season:fd.season_number??null,ep:fd.episode_number??null}}).filter(Boolean)}
 async function osComLink(c){const key=(S.settings.osKey||'').trim();const r=await fetch('https://api.opensubtitles.com/api/v1/download',{method:'POST',headers:{'Api-Key':key,'Content-Type':'application/json','Accept':'application/json','X-User-Agent':'SanadPlayer v2.4'},body:JSON.stringify({file_id:c.osFile})});
   const d=await r.json();if(!d||!d.link)throw new Error('osc dl '+(d&&d.message||r.status));return d.link}
+/* Podnapisi — works by title, no IDs or keys; good Arabic coverage for series */
+async function podnapisiSearch(item,season,ep,langs){const title=item.title||cleanTitle(item.name);if(!title)return[];
+  const q=new URLSearchParams({keywords:title,language:langs.join(','),movie_type:item.kind==='movie'?'movie':'tv-series'});if(item.year&&item.kind==='movie')q.set('year',item.year);if(season!=null){q.set('seasons',season);q.set('episodes',ep)}
+  const r=await fetch('https://www.podnapisi.net/subtitles/search/?'+q,{headers:{'Accept':'application/json'}});if(!r.ok)throw new Error('pn '+r.status);const d=await r.json();
+  return ((d&&d.data)||[]).filter(x=>x&&x.download).map(x=>({src:'Podnapisi',lang:subLangCode(x.language),release:((x.releases||[]).concat(x.custom_releases||[])[0])||((x.movie&&x.movie.title)||''),url:'https://www.podnapisi.net'+x.download,dl:+(x.stats&&x.stats.downloads)||0,hi:!!(x.flags&&x.flags.includes&&x.flags.includes('hearing_impaired'))}))}
+/* OpenSubtitles by title — the net for titles whose IMDb id we couldn't find */
+async function osOrgByTitle(item,season,ep,langs){const title=item.title||cleanTitle(item.name);if(!title)return[];const sl=langs.map(l=>OS3[l]).filter(Boolean).join(',');
+  const path=(ep!=null?`/episode-${+ep}`:'')+`/query-${encodeURIComponent(title.toLowerCase())}`+(season!=null?`/season-${+season}`:'')+`/sublanguageid-${sl}`;
+  const r=await fetch('https://rest.opensubtitles.org/search'+path,{headers:{'X-User-Agent':'TemporaryUserAgent','Accept':'application/json'}});if(!r.ok)throw new Error('osq '+r.status);const d=await r.json();
+  const y=item.year?String(item.year):'';return (Array.isArray(d)?d:[]).filter(x=>x&&x.SubDownloadLink&&(!y||!x.MovieYear||String(x.MovieYear)===y)).map(x=>({src:'OpenSubtitles',lang:subLangCode(x.ISO639||x.SubLanguageID),release:x.MovieReleaseName||x.SubFileName||'',file:x.SubFileName||'',url:x.SubDownloadLink,dl:+x.SubDownloadsCnt||0,hi:x.SubHearingImpaired==='1',season:x.SeriesSeason?+x.SeriesSeason:null,ep:x.SeriesEpisode?+x.SeriesEpisode:null}))}
 /* smarter than "list everything": wrong-episode results dropped, Arabic first, then matched to what you're actually playing */
 function subRank(list,item,season,ep){const pref=S.settings.subLang||'ar';const v=V&&V();const h=v&&v.videoHeight||0;
   const qtag=h>=1600?/2160p|4k|uhd/i:h>=900?/1080p/i:h>=600?/720p/i:h>0?/480p|dvd|sd/i:null;
@@ -802,10 +817,13 @@ function subRank(list,item,season,ep){const pref=S.settings.subLang||'ar';const 
       c.score=sc;return c}).sort((a,b)=>b.score-a.score)}
 function findSubs(item,season,ep){const k=[item.key,season??'',ep??'',S.settings.subLang,(S.settings.subdl||'').trim()?1:0,(S.settings.osKey||'').trim()?1:0].join('|');if(subCache.has(k))return subCache.get(k);
   const pr=(async()=>{const ids=await getIds(item);const langs=[...new Set([S.settings.subLang,'ar','en'])];
-    const res=await Promise.allSettled([subdlSearch(item,ids,season,ep,langs),osComSearch(item,ids,season,ep,langs),osOrgSearch(ids,season,ep,langs),item.kind==='movie'?yifySearch(ids,langs):Promise.resolve([])]);
+    const jobs=[subdlSearch(item,ids,season,ep,langs),osComSearch(item,ids,season,ep,langs),ids.imdb?osOrgSearch(ids,season,ep,langs):osOrgByTitle(item,season,ep,langs),podnapisiSearch(item,season,ep,langs),item.kind==='movie'?yifySearch(ids,langs):Promise.resolve([])];
+    const res=await Promise.allSettled(jobs);
     const list=[];res.forEach(r=>{if(r.status==='fulfilled')list.push(...r.value);else console.warn('subs',r.reason)});
+    // second net: nothing Arabic by id? try the title route too (different index on OpenSubtitles)
+    if(ids.imdb&&!list.some(c=>c.lang==='ar')){try{list.push(...await osOrgByTitle(item,season,ep,langs))}catch(e){}}
     return subRank(list,item,season,ep)})();
-  subCache.set(k,pr);pr.catch(()=>subCache.delete(k));return pr}
+  subCache.set(k,pr);pr.then(l=>{if(!l.some(c=>c.lang==='ar'))setTimeout(()=>{if(subCache.get(k)===pr)subCache.delete(k)},90000)}).catch(()=>subCache.delete(k));return pr}
 function decodeSub(u8,lang){if(u8[0]===0xFF&&u8[1]===0xFE)return new TextDecoder('utf-16le').decode(u8);if(u8[0]===0xFE&&u8[1]===0xFF)return new TextDecoder('utf-16be').decode(u8);
   try{return new TextDecoder('utf-8',{fatal:true}).decode(u8)}catch(e){return new TextDecoder(lang==='ar'?'windows-1256':lang==='tr'?'windows-1254':'windows-1252').decode(u8)}}
 function unzipPick(u8,season,ep){if(!window.fflate)throw new Error('nozip');const files=fflate.unzipSync(u8);let ents=Object.entries(files).filter(([n,d])=>/\.(srt|vtt|ass|ssa|sub|txt)$/i.test(n)&&!/__MACOSX/.test(n)&&d.length>50);if(!ents.length)throw new Error('empty');
@@ -886,7 +904,7 @@ function useFfSub(o,st,mt){const id='ff'+(++ffJob);ffSubStop();S.ffId=id;let buf
   window.sanad.subExtract(id,o.url,st.i,d=>{if(S.ffId!==id)return;if(d.chunk){buf+=d.chunk;if(!timer)timer=setTimeout(flush,800)}if(d.done){flush();S.ffId=null;if(n<2){console.warn('ffsub',d.err);if(S.sub&&S.sub.meta.ff===st.i){S.sub=null;subSearch(o,true)}}}});
   if(mt)arabize(S.sub,st.l||'en');else toast(L('✓ تم تشغيل الترجمة المدمجة: ','✓ Embedded subtitles on: ')+lname(st.l),2400)}
 function subsStart(o){S.subCtx={o,list:null,state:'idle'};ffSubStop();if(!o||!o.subItem)return;
-  (async()=>{let emb=null;if(isApp()){try{const info=await probeItem({key:o.key,url:o.url},o.url);if(info&&S.vod===o)S.subCtx.ff=info}catch(e){}}
+  (async()=>{let emb=null;if(isApp()){try{const info=await probeItem({key:o.key,url:o.url},o.url);if(info&&S.vod===o){S.subCtx.ff=info;if(info.hdr)toast(L('🌈 فيلم HDR — يُعرض بألوانه الأصلية بدون معالجة','🌈 HDR title — shown natively, enhancement off'),3500)}}catch(e){}}
     await new Promise(r=>setTimeout(r,600));if(S.vod!==o||!S.subCtx)return;if(!S.settings.subAuto)return;const pref=S.settings.subLang;
     const ff=S.subCtx.ff;if(ff&&ff.s){const st=ff.s.find(x=>x.l===pref&&!/hdmv|pgs|dvd/i.test(x.c))||ff.s.find(x=>x.l===pref);if(st){useFfSub(o,st);return}}
     emb=embeddedList().find(t=>subLangCode(t.lang)===pref||(pref==='ar'&&/arab|عرب/i.test(t.label)));if(emb){useEmbedded(emb);toast(L('✓ تم تشغيل الترجمة المدمجة: ','✓ Embedded subtitles on: ')+emb.label,2400);return}
@@ -902,6 +920,9 @@ async function subSearch(o,auto){const ctx=S.subCtx;if(!ctx||!o.subItem)return;c
     const en=list.filter(c=>c.lang==='en').concat(list.filter(c=>c.lang!=='en'&&c.lang!=='ar'));
     for(const c of en.slice(0,4)){if(S.vod!==o)return;try{await loadCandidate(c,true);if(S.sub&&S.sub.meta.cand===c){arabize(S.sub,c.lang);return}}catch(e){console.warn('sub load',c.url,e)}}
     if(speechStart(o,curT()))return}
+  // last resort: is there another copy of this film in the subscription that carries Arabic subs / audio?
+  if(o.subItem&&o.subItem.kind==='movie'){const alt=movieVersions(o.subItem).find(v=>v.key!==o.key&&(()=>{const t=S.tracks[v.key];return t&&t.s&&t.s.some(x=>x.l==='ar')||nameHints(v).sub})());
+    if(alt){toast(L('💡 فيه نسخة ثانية من هذا الفيلم فيها ترجمة عربية — اضغط هنا للتبديل لها','💡 Another copy of this film has Arabic subtitles — click to switch'),9000,()=>{S.qsel[norm(o.subItem.name)+'|'+(o.subItem.year||'')]=alt.key;const pos=curT();getMeta(o.subItem).catch(()=>({})).then(m=>playMovie(o.subItem,m||{},true));if(pos>5)setTimeout(()=>{const v=V();if(v)v.currentTime=pos},1500)});return}}
   toast(L(`ما لقيت ترجمة ${langAdj(S.settings.subLang)} لهذا العمل${(S.settings.subdl||'').trim()?'':' — تقدر تضيف مصدر SubDL من الإعدادات ← الترجمة'}. تقدر تختار من قائمة 💬`,`No ${langName(S.settings.subLang)} subtitles found${(S.settings.subdl||'').trim()?'':' — enable SubDL in Settings → Subtitles for more'}. You can pick from the 💬 menu`),6000)}
 function subMenu(){const it=[];const o=S.vod;const ctx=S.subCtx;const cur=S.sub&&S.sub.meta;
   it.push({label:L('إيقاف الترجمة','Subtitles off'),on:!S.sub,act:subsOff});
@@ -1402,7 +1423,7 @@ function vodFiltered(kind){const arr=kind==='movies'?S.movies:S.series;const g=S
   const q=(S.vodSearch[kind]||'').trim().toLowerCase();if(q)r=r.filter(x=>x.name.toLowerCase().includes(q));return r}
 function posterHTML(it,attr,foc){const r=it.kind==='movie'?S.resume[it.key]:null;const prog=r?(r.done?100:Math.round(r.pos/r.dur*100)):0;const t=it.title||it.name;
   const sr=it.kind==='series'?S.resume[it.key]:null;const sub=sr&&sr.season?SE(sr.season,sr.ep):(it.year?arN(it.year):'&nbsp;');const q=qualityOf(it);
-  if(it.kind==='movie'&&it.url)queueProbe(it);const inCont=(S.screen==='movies'||S.screen==='series')&&S.vodGroup[S.screen]==='__cont'&&/data-p=/.test(attr);return `<div class="pc${foc?' foc':''}" ${attr} data-key="${esc(it.key)}"><div class="im">${inCont?`<span class="rmx" data-rmc="1" title="${L('حذف من متابعة المشاهدة','Remove from Continue watching')}">✕</span>`:''}<span class="ini">${initials(t)}</span>${it.logo?`<img src="${esc(it.logo)}" loading="lazy" alt="" onerror="this.remove()">`:''}${it.rating&&+it.rating?`<span class="rt">★ ${arN(it.rating)}</span>`:''}${(()=>{const rl=resLabel(it);return rl?`<span class="q4 ${resCls(rl)}">${arN(rl)}</span>`:''})()}${(()=>{const k=arKind(it);return k===2?`<span class="arb a2">${L('عربي','Arabic')}</span>`:k===1?`<span class="arb a1">${L('مترجم','Subtitled')}</span>`:''})()}${S.favs.has(it.key)?'<span class="fv">★</span>':isPriv(it.key)?'<span class="fv">🔒</span>':''}${it.kind==='movie'?abHTML(it):''}${prog?`<div class="pr"><i style="width:${prog}%"></i></div>`:''}</div><div class="nm" title="${esc(it.name)}">${esc(t)}</div><div class="yr">${sub}</div></div>`}
+  if(it.kind==='movie'&&it.url)queueProbe(it);const inCont=(S.screen==='movies'||S.screen==='series')&&S.vodGroup[S.screen]==='__cont'&&/data-p=/.test(attr);return `<div class="pc${foc?' foc':''}" ${attr} data-key="${esc(it.key)}"><div class="im">${inCont?`<span class="rmx" data-rmc="1" title="${L('حذف من متابعة المشاهدة','Remove from Continue watching')}">✕</span>`:''}<span class="ini">${initials(t)}</span>${it.logo?`<img src="${esc(it.logo)}" loading="lazy" alt="" onerror="this.remove()">`:''}${it.rating&&+it.rating?`<span class="rt">★ ${arN(it.rating)}</span>`:''}${(()=>{const rl=resLabel(it);return (rl?`<span class="q4 ${resCls(rl)}">${arN(rl)}</span>`:'')+hdrChip(it)})()}${(()=>{const k=arKind(it);return k===2?`<span class="arb a2">${L('عربي','Arabic')}</span>`:k===1?`<span class="arb a1">${L('مترجم','Subtitled')}</span>`:''})()}${S.favs.has(it.key)?'<span class="fv">★</span>':isPriv(it.key)?'<span class="fv">🔒</span>':''}${it.kind==='movie'?abHTML(it):''}${prog?`<div class="pr"><i style="width:${prog}%"></i></div>`:''}</div><div class="nm" title="${esc(it.name)}">${esc(t)}</div><div class="yr">${sub}</div></div>`}
 function renderVOD(kind){
   S.vlist=vodFiltered(kind);S.vf=Math.max(0,Math.min(S.vf||0,S.vlist.length-1));const gs=vodGroups(kind);
   $('#screen').innerHTML=`<div class="vs"><div class="vhero" id="vhero"></div><div class="vmain">
@@ -1421,7 +1442,7 @@ function appendPosters(){const g=$('#vgrid');if(!g)return;const grp=S.vodGroup[S
 function paintHero(it,m){const el=$('#vhero');if(!el)return;if(!it){el.innerHTML='';return}
   const plot=m?m.plot:(it.plot||'');const bd=(m&&(m.backdrop||m.poster))||it.logo;const q=qualityOf(it);
   const rt=m&&m.rating&&+m.rating?m.rating:(it.rating&&+it.rating?it.rating:'');const yr=(m&&m.year)||it.year;
-  const chips=[q.q?`<span class="tag q">${q.q}</span>`:'',rt?`<span class="rate">★ ${arN(rt)}</span>`:'',yr?arN(yr):'',m&&m.duration,m&&m.genre&&esc(m.genre)].filter(Boolean).join('<span class="dot">•</span>');
+  const chips=[q.q?`<span class="tag q">${q.q}</span>`:'',isHdr(it)?`<span class="tag hdr">HDR</span>`:'',rt?`<span class="rate">★ ${arN(rt)}</span>`:'',yr?arN(yr):'',m&&m.duration,m&&m.genre&&esc(m.genre)].filter(Boolean).join('<span class="dot">•</span>');
   el.innerHTML=`<div class="vhbg" style="${bgUrl(bd)}"></div><div class="vhshade"></div><div class="vhinfo"><h1>${esc(it.title||it.name)}</h1><div class="chips">${chips}</div>${plot?`<p>${esc(plot)}</p>`:''}</div>`}
 const heroFor=debounce(async it=>{if(!it||!$('#vhero'))return;S.heroKey=it.key;const m=S.meta[it.key];if(m){paintHero(it,m);return}
   try{const mm=await getMeta(it);if(S.heroKey===it.key&&(S.screen==='movies'||S.screen==='series'))paintHero(it,mm)}catch(e){}},450);
@@ -1811,6 +1832,7 @@ function setContent(c){const P=pl();
     <div class="opt"><div class="f"><b>${L('الترجمات المدمجة في البث','Subtitles embedded in the stream')}</b><small style="color:var(--ok)">✓ ${L('تلقائي','Automatic')}</small></div></div>
     <div class="opt"><div class="f"><b>OpenSubtitles</b><small><span style="color:var(--ok)">✓ ${L('شغّال بدون إعداد','Works with no setup')}</span> — ${L('نفس مكتبة IPTV Expert، أفلام ومسلسلات، ونرتّبها لك: العربي أول، والأقرب لنسخة الفيلم اللي تشغّله، ونشيل ترجمات الحلقات الغلط','the same library IPTV Expert uses, movies & series — ranked for you: Arabic first, closest to the version you play, wrong-episode results removed')}</small></div></div>
     <div class="opt col"><div class="f"><b>OpenSubtitles.com — ${L('مفتاح اختياري','optional key')}</b><small>${(S.settings.osKey||'').trim()?`<span style="color:var(--ok)">✓ ${L('مفعّل','Enabled')}</span>`:L('اختياري: يعطيك نتائج أكثر لو المصدر المجاني ما لقى','Optional: more results if the free source finds nothing')}</small></div><input class="in" id="osKey" value="${esc(S.settings.osKey||'')}" placeholder="${L('الصق مفتاح OpenSubtitles API هنا','Paste your OpenSubtitles API key here')}"><div class="row2"><button class="btn p" data-act="saveOs">${L('حفظ','Save')}</button>${(S.settings.osKey||'').trim()?`<button class="btn d" data-act="clearOs">${L('إلغاء التفعيل','Disable')}</button>`:''}</div></div>
+    <div class="opt"><div class="f"><b>Podnapisi</b><small><span style="color:var(--ok)">✓ ${L('شغّال بدون إعداد','Works with no setup')}</span> — ${L('يدوّر بالاسم حتى لو ما عرفنا رقم الفيلم، أفلام ومسلسلات','searches by title even without an IMDb id, movies & series')}</small></div></div>
     <div class="opt"><div class="f"><b>YIFY</b><small><span style="color:var(--ok)">✓ ${L('شغّال بدون إعداد','Works with no setup')}</span> — ${L('ترجمات للأفلام فقط','movies only')}</small></div></div>
     <div class="opt col"><div class="f"><b>SubDL — ${L('أكبر مكتبة ترجمة عربية للأفلام والمسلسلات','the largest Arabic subtitle library for movies & series')}</b><small>${hs?`<span style="color:var(--ok)">✓ ${L('مفعّل','Enabled')}</span>`:L('يحتاج مفتاح مجاني — بدونه ما في ترجمات للمسلسلات','Needs a free key — without it there are no subtitles for series')}</small></div><input class="in" id="subdlKey" value="${esc(S.settings.subdl)}" placeholder="${L('الصق مفتاح SubDL هنا','Paste your SubDL key here')}"><div class="row2"><button class="btn p" data-act="saveSubdl">${L('حفظ وتجربة','Save & test')}</button>${hs?`<button class="btn d" data-act="clearSubdl">${L('إلغاء التفعيل','Disable')}</button>`:''}</div></div>
     <div class="howto"><b>${L('طريقة الحصول على مفتاح SubDL (مجاني، دقيقتين):','How to get a SubDL key (free, 2 minutes):')}</b><ol>
