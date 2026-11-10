@@ -12,6 +12,16 @@
 <style>
 :root{--bg:#0a0c0f;--p1:#101317;--p2:#161a20;--p3:#1f242c;--p4:#2a3039;--ln:#232931;--tx:#eef1f5;--mu:#8b95a3;--mu2:#5c6674;--ac:#4a90ff;--foc:#e8ecf1;--gold:#f5c518;--red:#ff4d4d;--ok:#3ccf7a;--CHW:280px;--rail:68px}
 
+/* TOP 10 strip */
+.top10{margin:4px 12px 0;padding:10px 14px 8px;border-radius:16px;background:var(--p1);border:1px solid var(--ln);flex-shrink:0}
+.t10h{display:flex;align-items:center;gap:12px;margin-bottom:8px}.t10h b{font-size:17px;font-weight:900;letter-spacing:1px}.t10h b span{background:linear-gradient(90deg,#ffd166,#ff2bd6);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:20px}.t10s{color:var(--mu);font-size:13px}
+.t10p{display:flex;gap:4px;background:var(--p3);border-radius:20px;padding:3px}.t10p button{padding:5px 12px;border-radius:16px;font-size:12.5px;color:var(--mu);transition:all .14s}.t10p button.on{background:var(--foc);color:#000;font-weight:800}
+.t10r{display:flex;gap:14px;overflow-x:auto;overflow-y:hidden;padding:4px 2px 6px;scroll-snap-type:x proximity;scrollbar-width:thin}
+.t10c{position:relative;flex:0 0 auto;width:110px;cursor:pointer;scroll-snap-align:start;padding-inline-start:26px;transition:transform .15s}.t10c:hover{transform:translateY(-3px)}
+.t10c .num{position:absolute;bottom:22px;inset-inline-start:-2px;font-size:64px;line-height:1;font-weight:900;color:#000;-webkit-text-stroke:2px #fff;z-index:2;font-family:Tajawal,system-ui;text-shadow:0 6px 18px #000}
+.t10c .im{aspect-ratio:2/3;border-radius:10px;overflow:hidden;position:relative;background:var(--p3);display:grid;place-items:center}.t10c .im img{width:100%;height:100%;object-fit:cover;display:block}.t10c .ini{font-size:22px;font-weight:900;color:var(--mu)}.t10c .rt{position:absolute;top:6px;inset-inline-end:6px;background:#000c;color:var(--gold);font-size:11px;padding:2px 6px;border-radius:6px;font-weight:800}
+.t10c small{display:block;margin-top:5px;font-size:12px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html[data-theme=neon] .top10{background:#07070b;border-color:#1e1f2a}html[data-theme=neon] .t10c .num{-webkit-text-stroke:2px #00e5ff;text-shadow:0 0 14px #00e5ff88}html[data-theme=neon] .t10c:hover .im{box-shadow:0 0 0 2px #00e5ff,0 0 18px #00e5ff77}html[data-theme=neon] .t10p button.on{background:linear-gradient(90deg,#00e5ff,#39c7ff)}
 /* hidden-items vault */
 .hidbar{margin:6px 12px 2px;padding:14px 16px;border:1px dashed var(--ln);border-radius:16px;background:var(--p1);display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 .hidbar .hbt{display:flex;gap:12px;align-items:center;flex:1;min-width:260px}.hidbar .hbi{width:44px;height:44px;border-radius:12px;background:var(--p3);display:grid;place-items:center;font-size:22px}.hidbar b{display:block;font-size:15px}.hidbar small{color:var(--mu);font-size:12.5px}
@@ -1576,14 +1586,23 @@ function hiddenBar(kind){if(S.vodGroup[kind]!=='__hid')return '<span id="hidbar"
   return `<div class="hidbar" id="hidbar"><div class="hbt"><span class="hbi">🙈</span><div><b>${L('العناصر المخفية','Hidden items')}</b><small>${L('الأقسام هنا ما تطلع في أي قائمة ولا في البحث إلا بالرمز السري.','Categories here never appear in lists or search without the PIN.')}</small></div></div>
     <div class="hbl">${hid.length?hid.map(g=>`<span class="hchip">🙈 ${esc(g)}<button data-unhide="${esc(g)}" title="${L('إظهار','Unhide')}">✕</button></span>`).join(''):`<span class="sd">${L('ما فيه أقسام مخفية بعد','No hidden categories yet')}</span>`}</div>
     <div class="hba"><select class="in" data-hidepick="1"><option value="">＋ ${L('إخفاء قسم كامل…','Hide a whole category…')}</option>${all.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('')}</select></div></div>`}
-function renderVGrid(kind){S.vlist=vodFiltered(kind);S.vf=Math.max(0,Math.min(S.vf||0,S.vlist.length-1));const g=$('#vgrid');if(!g){renderVOD(kind);return}
+/* ===== TOP 10 — first row: the 10 best of the current list, ranked by the chosen sort, for this month / this year / all time ===== */
+const T10P=()=>[['month',L('هذا الشهر','This month')],['year',L('هذه السنة','This year')],['all',L('كل الأوقات','All time')]];
+function top10(kind){const g=S.vodGroup[kind];if(['__cont','__fav','__pfav','__hid'].includes(g))return [];const f=vfOf(kind);const per=S.settings.top10p||'all';const now=Date.now()/1000,Y=new Date().getFullYear();
+  let r=S.vlist;if(per==='month')r=r.filter(x=>(x.added||0)>now-30*86400);else if(per==='year')r=r.filter(x=>(x.added||0)>now-365*86400||+(x.year||0)===Y);
+  if(!f.sort){enrich(r.slice(0,80).filter(x=>!VM.map.has(x.key)),80);r=r.slice().sort((a,b)=>(ratingOf(b)-ratingOf(a))||((b.added||0)-(a.added||0)))}
+  return r.slice(0,10)}
+function top10Html(kind){const list=top10(kind);if(!list.length&&(S.settings.top10p||'all')==='all')return '<span id="top10" hidden></span>';if(['__cont','__fav','__pfav','__hid'].includes(S.vodGroup[kind]))return '<span id="top10" hidden></span>';const f=vfOf(kind);const sn={'':L('الأعلى تقييماً','Top rated'),rating:L('الأعلى تقييماً','Top rated'),new:L('الأحدث إضافة','Newest'),year:L('الأحدث إنتاجاً','Newest releases'),ar:L('العربي أولاً','Arabic first')}[f.sort||'']||'';const per=S.settings.top10p||'all';
+  return `<div class="top10" id="top10"><div class="t10h"><b>🏆 TOP <span>10</span></b><span class="t10s">${sn}</span><span style="flex:1"></span><div class="t10p">${T10P().map(([k,n])=>`<button class="${per===k?'on':''}" data-t10p="${k}">${n}</button>`).join('')}</div></div>
+    <div class="t10r">${!list.length?`<span class="sd" style="padding:10px 4px">${L('ما أضيف شي جديد في هذي الفترة','Nothing added in this period')}</span>`:''}${list.map((it,i)=>`<div class="t10c" data-t10="${esc(it.key)}"><span class="num">${arN(i+1)}</span><div class="im">${it.logo?`<img src="${esc(it.logo)}" loading="lazy" alt="" onerror="this.remove()">`:`<span class="ini">${initials(it.title||it.name)}</span>`}${ratingOf(it)?`<span class="rt">★ ${arN(ratingOf(it).toFixed(1))}</span>`:''}</div><small>${esc(it.title||it.name)}</small></div>`).join('')}</div></div>`}
+function renderVGrid(kind){S.vlist=vodFiltered(kind);S.vf=Math.max(0,Math.min(S.vf||0,S.vlist.length-1));const g=$('#vgrid');if(!g){renderVOD(kind);return}const t=$('#top10');if(t)t.outerHTML=top10Html(kind);
   g.innerHTML='';g.scrollTop=0;S.vRendered=0;appendPosters();while(S.vRendered<=S.vf&&S.vRendered<S.vlist.length)appendPosters();
   const f=g.querySelector('.pc.foc');if(f)f.scrollIntoView({block:'center'});paintHero(S.vlist[S.vf],null);heroFor(S.vlist[S.vf])}
 function renderVOD(kind){
   S.vlist=vodFiltered(kind);S.vf=Math.max(0,Math.min(S.vf||0,S.vlist.length-1));const gs=vodGroups(kind);
   $('#screen').innerHTML=`<div class="vs"><div class="vhero" id="vhero"></div><div class="vmain">
     <div class="vgroups"><div class="vsrch"><input id="vq" placeholder="${kind==='movies'?L('ابحث في الأفلام…','Search movies…'):L('ابحث في المسلسلات…','Search series…')}" value="${esc(S.vodSearch[kind])}"></div><select class="in vqf" data-vqf="1" title="${L('تصفية حسب الجودة','Filter by quality')}"><option value="">${L('كل الجودات','All qualities')}</option>${['4K','2K','1080p','720p','480p'].map(q=>`<option value="${q}" ${(S.vodQ||{})[kind]===q?'selected':''}>${arN(q)}</option>`).join('')}</select><button class="li vfb${vfCount(kind)?' on':''}" data-vfo="1"><span>🎚 ${L('فلتر: النوع، التقييم، الترجمة','Filter: genre, rating, subtitles')}</span><span class="c">${vfCount(kind)?arN(vfCount(kind)):''}</span></button>${VM.total?`<div class="vmp">${L('جاري جلب أنواع وتقييمات الأفلام من المزوّد','Fetching genres & ratings from the provider')} ${arN(VM.done)}/${arN(VM.total)}<i style="width:${VM.total?VM.done/VM.total*100:0}%"></i></div>`:''}<button class="li arf${onlyAr()?' on':''}" data-arf="1"><span>💬 ${L('العربي والمترجم بس','Arabic & subtitled only')}</span><span class="c">${onlyAr()?L('تشغيل','On'):L('إيقاف','Off')}</span></button><div class="vgl">${gs.map(g=>`<button class="li${g.id===S.vodGroup[kind]?' foc':''}" data-vg="${esc(g.id)}"><span>${esc(g.name)}</span>${g.g?`<i class="ga" data-gh="1" title="${L('إخفاء المجموعة','Hide group')}">🙈</i><i class="ga" data-gl="1" title="${L('قفل بالرمز السري','Lock with PIN')}">${isLockedG(kind,g.g)?'🔓':'🔒'}</i>`:''}<span class="c">${g.n!==''?arN(g.n):''}</span></button>`).join('')}</div></div>
-    <div class="vcol">${hiddenBar(kind)}<div class="vgrid" id="vgrid"></div></div></div></div>`;
+    <div class="vcol">${hiddenBar(kind)}${top10Html(kind)}<div class="vgrid" id="vgrid"></div></div></div></div>`;
   S.vRendered=0;appendPosters();while(S.vRendered<=S.vf&&S.vRendered<S.vlist.length)appendPosters();
   const g=$('#vgrid');g.addEventListener('scroll',()=>{if(g.scrollTop+g.clientHeight>g.scrollHeight-700)appendPosters()});
   const f=g.querySelector('.pc.foc');if(f)f.scrollIntoView({block:'center'});
@@ -1867,7 +1886,7 @@ $('#vfM').addEventListener('click',e=>{const kind=S.vfKind||'movies';if(e.target
   else if(b.dataset.vfq!=null)vfSet(kind,{q:b.dataset.vfq});
   else if(b.dataset.vfs!=null)vfSet(kind,{sort:b.dataset.vfs});
   S.vf=0;if(S.screen===kind)renderVOD(kind);renderVF()});
-VM.listeners.add(()=>{if(S.screen==='movies'||S.screen==='series'){const k=S.screen;const g=document.querySelector('.vmp');const f=vfOf(k);if(f.g.length||f.r||f.sort==='rating'){const gr=document.querySelector('.vgrid,.grid');if(!gr||gr.scrollTop<60)renderVOD(k);else if(g)g.firstChild&&(g.firstChild.textContent=L('جاري جلب أنواع وتقييمات الأفلام من المزوّد','Fetching genres & ratings from the provider')+` ${arN(VM.done)}/${arN(VM.total)}`)}else if(g&&!VM.total)g.remove()}if($('#vfM').classList.contains('show'))renderVF()});
+VM.listeners.add(()=>{if(S.screen==='movies'||S.screen==='series'){const k=S.screen;{const t=$('#top10');if(t&&!(S._t10T)){S._t10T=setTimeout(()=>{S._t10T=null;const t2=$('#top10');if(t2)t2.outerHTML=top10Html(k)},800)}}const g=document.querySelector('.vmp');const f=vfOf(k);if(f.g.length||f.r||f.sort==='rating'){const gr=document.querySelector('.vgrid,.grid');if(!gr||gr.scrollTop<60)renderVOD(k);else if(g)g.firstChild&&(g.firstChild.textContent=L('جاري جلب أنواع وتقييمات الأفلام من المزوّد','Fetching genres & ratings from the provider')+` ${arN(VM.done)}/${arN(VM.total)}`)}else if(g&&!VM.total)g.remove()}if($('#vfM').classList.contains('show'))renderVF()});
 
 /* ============ First-run setup: subtitles, audio, picture ============ */
 function openSetup(){renderSetup();$('#setupM').classList.add('show')}
@@ -2170,6 +2189,8 @@ function bindStatic(){
       const vfo=e.target.closest('[data-vfo]');if(vfo){openVF(kind);return}
       const af=e.target.closest('[data-arf]');if(af){S.settings.onlyAr=!onlyAr();saveSet();S.vf=0;renderVOD(kind);toast(onlyAr()?L('💬 يعرض العربي والمترجم بس — في كل القوائم والبحث','💬 Showing Arabic & subtitled only — in every list and search'):L('يعرض كل الأفلام','Showing everything'),2200);return}
       const uh=e.target.closest('[data-unhide]');if(uh){toggleHidden(kind,uh.dataset.unhide,false);renderVOD(kind);return}
+      const tp=e.target.closest('[data-t10p]');if(tp){S.settings.top10p=tp.dataset.t10p;saveSet();const t=$('#top10');if(t)t.outerHTML=top10Html(kind);return}
+      const tc=e.target.closest('[data-t10]');if(tc){const it=(kind==='movies'?S.movies:S.series).find(x=>x.key===tc.dataset.t10);if(it)openDetail(it);return}
       const vg=e.target.closest('[data-vg]');if(vg){const g=vg.dataset.vg;const gh=e.target.closest('[data-gh]'),gl=e.target.closest('[data-gl]');
         if(gh&&!g.startsWith('__')){toggleHidden(kind,g,true);if(S.vodGroup[kind]===g)S.vodGroup[kind]='__all';toast(L('🙈 انخفى «'+g+'» — تلقاه في قسم 🙈 بالرمز السري','🙈 “'+g+'” hidden — find it under 🙈 with your PIN'),2500);renderVOD(kind);return}
         if(gl&&!g.startsWith('__')){if(toggleLock(kind,g)){if(S.vodGroup[kind]===g&&gLocked(kind,g))S.vodGroup[kind]='__all';renderVOD(kind)}return}
