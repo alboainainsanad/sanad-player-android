@@ -237,6 +237,7 @@ body.pm #stage.ui.lv #liveBar,body.pm #stage.ui.vd #vodBar{display:block}
 #topBar{position:absolute;top:0;right:0;left:0;padding:20px 26px 40px;background:linear-gradient(#000d,transparent);z-index:4;align-items:center;gap:10px}
 #topBar .tt{font-weight:800;font-size:18px;text-shadow:0 0 8px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .qb{font-size:12.5px;background:#ffffff1c;padding:4px 10px;border-radius:20px;white-space:nowrap;color:#dfe5ec}.qb.on{background:linear-gradient(90deg,#1a63ff55,#8a5cff55);color:#fff}
+.cb.pbtn{font-weight:800}.cb.pbtn i{font-style:normal;opacity:.6;font-weight:500;margin-inline-start:4px}.cb.pbtn.hdr{background:linear-gradient(90deg,#ff6a00,#ffd000 50%,#00d4ff);color:#000;box-shadow:0 0 14px #ffd00066}.cb.pbtn.vivid{background:linear-gradient(90deg,#ff2bd6aa,#ff8a00aa);color:#fff}.cb.pbtn.cinematic{background:linear-gradient(90deg,#2a2440,#5a3d1b);color:#ffd9a8}.cb.pbtn.sport{background:#1dd37555;color:#c8ffe0}.cb.pbtn.anime{background:#7a5cff66;color:#eae3ff}.cb.pbtn.night{background:#102033;color:#9fc6ff}
 .qb.res{font-weight:800;letter-spacing:.3px}.qb.hdr{background:linear-gradient(90deg,#ff6a00,#ffd000 50%,#00d4ff);color:#000;font-weight:900;box-shadow:0 0 14px #ffd00066}.qb.pic{font-weight:800;border:1px solid #ffffff33}.qb.pic i{font-style:normal;opacity:.7;font-weight:500}.qb.pic.vivid{background:linear-gradient(90deg,#ff2bd6aa,#ff8a00aa);color:#fff;box-shadow:0 0 12px #ff2bd655}.qb.pic.cinematic{background:linear-gradient(90deg,#1b1b2faa,#5a3d1baa);color:#ffd9a8;border-color:#ffb86b55}.qb.pic.sport{background:#1dd37555;color:#c8ffe0}.qb.pic.anime{background:#7a5cff66;color:#eae3ff}.qb.pic.night{background:#102033;color:#9fc6ff}
 .cb{height:42px;min-width:42px;padding:0 15px;border-radius:21px;background:#ffffff1c;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:14px;white-space:nowrap}
 .cb:hover{background:#ffffff36}.cb.p{background:#fff;color:#000}.cb.sm{height:34px;padding:0 12px;font-size:13px}
@@ -411,7 +412,9 @@ kbd{min-width:110px;text-align:center;background:var(--p3);border:1px solid var(
 .tabs{display:flex;gap:6px;background:var(--bg);padding:4px;border-radius:12px;margin-bottom:12px}
 .tabs button{flex:1;padding:9px;border-radius:9px;color:var(--mu);font-size:14px}.tabs button.on{background:var(--foc);color:#000}
 label{display:block;font-size:13px;color:var(--mu);margin:12px 0 5px}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1b2738;border:1px solid #2b3d57;padding:11px 20px;border-radius:12px;font-size:14px;z-index:90;display:none;max-width:90vw;box-shadow:0 10px 30px #000a}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);}
+body.pm .toast{bottom:auto;top:64px;font-size:13px;padding:8px 16px;opacity:.95}
+.toast{background:#1b2738;border:1px solid #2b3d57;padding:11px 20px;border-radius:12px;font-size:14px;z-index:90;display:none;max-width:90vw;box-shadow:0 10px 30px #000a}
 .toast.show{display:block}
 @media (max-width:1000px){:root{--CHW:200px}.cc .lg{display:none}.hslot{max-width:48%}.vgroups{width:200px}.dtop,.act{flex-direction:column}}
 </style>
@@ -806,6 +809,9 @@ const ENH={gl:null,ok:null,run:false,blocked:false,out:'',
     st.classList.add('enh')}
 };
 const vw0=v=>v.videoWidth+'x'+v.videoHeight;
+/* top-bar picture button: 🌈 HDR when the title is HDR (native, untouched), otherwise the active picture mode; click cycles modes */
+function picBtn(){const hdr=S.vod&&isHdr(S.vod.subItem||S.vod.it||S.vod);if(hdr)return `<button class="cb pbtn hdr" data-a="pic" title="HDR">🌈 HDR</button>`;const k=picKey();return `<button class="cb pbtn ${k}" data-a="pic" title="${L('وضع الصورة','Picture mode')}">🎨 ${L(...PIC_N[k])}${(S.settings.pic||'auto')==='auto'?'<i>·'+L('تلقائي','auto')+'</i>':''}</button>`}
+function cyclePic(){const K=PIC_K;S.settings.pic=K[(K.indexOf(S.settings.pic||'auto')+1)%K.length];saveSet();ENH.blocked=false;if(MOB&&window.NAT&&NAT.setPic)NAT.setPic({pic:picIdx()}).catch(()=>{});toast(L('🎨 وضع الصورة: ','🎨 Picture mode: ')+picName(),1500);if(S.pm||S.vod)renderTop()}
 function cycleEnh(){const K=['auto','off','normal','strong'];S.settings.enh=K[(K.indexOf(S.settings.enh)+1)%K.length];saveSet();ENH.blocked=false;toast(L('تحسين الصورة: ','Picture enhancement: ')+enhName(),1600);if(S.pm||S.vod)renderTop()}
 const enhName=()=>S.settings.enh==='auto'?autoEnhName():ENH_NAMES()[S.settings.enh];
 function cycleMotion(){const K=['off','light','full'];S.settings.motion=K[(K.indexOf(S.settings.motion||'off')+1)%3];saveSet();ENH.blocked=false;toast(L('تنعيم الحركة: ','Motion smoothing: ')+MOTION_NAMES()[S.settings.motion],1600);if(S.pm||S.vod)renderTop()}
@@ -1013,7 +1019,7 @@ function speechStart(o,at){if(!isApp()||!S.settings.speechSubs)return false;mtHo
   subNote(L('🤖 ما فيه أي ترجمة لهذا العمل — جاري توليد ترجمة عربية من الصوت (أول مرة ينزل محرك التعرّف على الكلام)','🤖 No subtitles at all — generating Arabic subtitles from the audio (first time downloads the speech model)'),5000);
   clearInterval(SP.watch);SP.watch=setInterval(()=>{if(!S.sub||S.sub.speech!==id){clearInterval(SP.watch);window.sanad.aiCmd({type:'speechStop',id});return}const t=curT();if(t<SP.from-2||t>SP.to+90){window.sanad.aiCmd({type:'speechStop',id});const nid='sp'+Date.now();SP.id=nid;S.sub.speech=nid;SP.from=t;SP.to=t;window.sanad.aiCmd({type:'speech',id:nid,url:o.url,start:Math.max(0,t-1),mtEngine:S.settings.mtEngine||'auto'})}},2000);return true}
 function speechOnCues(d){if(!S.sub||S.sub.speech!==d.id)return;const cs=S.sub.cues;for(const c of d.cues)cs.push(c);cs.sort((a,b)=>a.st-b.st);S.sub.lastKey='';SP.to=Math.max(SP.to,d.to||0)}
-function speechOnState(d){if(!S.sub||S.sub.speech!==d.id)return;if(d.state==='model')S.sub.meta.label='🤖 '+L('تنزيل محرك الكلام… ','Downloading speech model… ')+(d.pct!=null?arN(Math.round(d.pct))+'٪':'');else if(d.state==='run')S.sub.meta.label='🤖 '+L('عربي (من الصوت · آلي)','Arabic (from speech · AI)');else if(d.state==='error'){toast(L('تعذّر توليد الترجمة من الصوت: ','Speech subtitles failed: ')+(d.error||''),5000)}if(S.pm||S.vod)renderBars()}
+function speechOnState(d){if(!S.sub||S.sub.speech!==d.id)return;if(d.state==='model')S.sub.meta.label='🤖 '+L('تنزيل محرك الكلام… ','Downloading speech model… ')+(d.pct!=null?arN(Math.round(d.pct))+'٪':'');else if(d.state==='run')S.sub.meta.label='🤖 '+L('عربي (من الصوت · آلي)','Arabic (from speech · AI)');else if(d.state==='error'){subNote(L('تعذّر توليد الترجمة من الصوت: ','Speech subtitles failed: ')+(d.error||''))}if(S.pm||S.vod)renderBars()}
 let ffJob=0;
 function ffSubStop(){if(S.ffId&&isApp())window.sanad.subStop(S.ffId);S.ffId=null}
 function useFfSub(o,st,mt){const id='ff'+(++ffJob);ffSubStop();S.ffId=id;let buf='',n=0;S.sub={kind:'ext',cues:[],meta:{src:L('مدمجة','Embedded'),lang:st.l,label:L('مدمجة: ','Embedded: ')+lname(st.l)+(st.t?' · '+st.t:''),ff:st.i},offset:0,lastKey:''};subLoopStart();if(S.pm||S.vod)renderBars();
@@ -1362,7 +1368,7 @@ function placeStage(){const st=$('#stage');
 let uiT;function showUI(ms=4500){const st=$('#stage');st.classList.add('ui');renderBars();clearTimeout(uiT);uiT=setTimeout(()=>{if(!S.side&&!(S.vod&&V().paused))st.classList.remove('ui')},ms)}
 function renderBars(){renderTop();if(S.vod||S.catchup)renderVodBar();else renderLiveBar()}
 function renderTop(){const t=S.vod?S.vod.title:S.catchup?S.catchup.ch.name+L(' · إعادة',' · Catch-up'):(S.playing?S.playing.name:'');
-  $('#topBar').innerHTML=`<button class="cb" data-a="back">${BACK()}</button><span class="tt">${esc(t)}</span>${qBadge()}<span style="flex:1"></span>${!S.vod?`<button class="cb" data-a="list">☰ ${L('القنوات','Channels')}</button>`:''}<button class="cb" data-a="subs" title="${L('الترجمة','Subtitles')}">💬</button><button class="cb" data-a="enh" title="${L('تحسين الصورة','Picture enhancement')}">✨ ${enhName()}</button><button class="cb" data-a="menu">⋮ ${L('الخيارات','Options')}</button><button class="cb" data-a="fs" title="${L('ملء الشاشة','Fullscreen')}">⛶</button>`}
+  $('#topBar').innerHTML=`<button class="cb" data-a="back">${BACK()}</button><span class="tt">${esc(t)}</span>${qBadge()}<span style="flex:1"></span>${!S.vod?`<button class="cb" data-a="list">☰ ${L('القنوات','Channels')}</button>`:''}<button class="cb" data-a="subs" title="${L('الترجمة','Subtitles')}">💬</button>${picBtn()}<button class="cb" data-a="menu">⋮ ${L('الخيارات','Options')}</button><button class="cb" data-a="fs" title="${L('ملء الشاشة','Fullscreen')}">⛶</button>`}
 function renderLiveBar(){const el=$('#liveBar');const ch=S.playing;if(!ch){el.innerHTML='';return}const p=nowP(ch),nx=nextP(ch);
   el.innerHTML=`<div class="lb">${logo(ch.logo,ch.name)}<div class="lbm"><div class="lb1"><span class="num">${esc(arN(ch.num||''))}</span><b>${esc(ch.name)}</b>${S.favs.has(ch.key)?'<span style="color:var(--gold)">★</span>':''}${ch.archive?'<span style="color:#7fb6ff">⟲</span>':''}<span class="grp">${esc(ch.group)}</span></div>
     <div class="lb2">${esc(p?p.t:L('لا توجد معلومات برامج','No guide info'))}</div>
@@ -1381,7 +1387,7 @@ function togglePlay(){const v=V();if(v.paused)v.play().catch(()=>{});else v.paus
 function seekBy(s){seekTo(curT()+s);showUI()}
 function zap(dir){const list=S.ch;if(!list.length)return;const i=list.findIndex(c=>S.playing&&c.key===S.playing.key);const j=(((i<0?0:i+dir)%list.length)+list.length)%list.length;playChannel(list[j]);showUI()}
 function stageAct(a){
-  if(a==='back')pmBack();else if(a==='menu')openMenu();else if(a==='list')openSide('ch');else if(a==='fs')toggleBrowserFs();else if(a==='enh')cycleEnh();
+  if(a==='back')pmBack();else if(a==='menu')openMenu();else if(a==='list')openSide('ch');else if(a==='fs')toggleBrowserFs();else if(a==='enh')cycleEnh();else if(a==='pic')cyclePic();
   else if(a==='pp')togglePlay();else if(a==='back10')seekBy(-10);else if(a==='fwd10')seekBy(10);
   else if(a==='next'){if(S.vod&&S.vod.next)S.vod.next()}else if(a==='golive'){if(S.catchup)playChannel(S.catchup.ch,{pm:true})}
   else if(a==='subs')openSubs();else if(a==='grp')openSide('grp');else if(a==='mback')menuBack();
