@@ -134,6 +134,7 @@ final class SPPlayerViewController: UIViewController, AVPlayerItemLegibleOutputP
         renderer = SPEnhanceRenderer(view: mtk)
         mtk.delegate = renderer
         renderer?.p.mode = Int(num("enh"))
+        renderer?.p.pic = Int(num("pic"))
         renderer?.p.year = Int(num("year"))
         buildUI()
         let tap = UITapGestureRecognizer(target: self, action: #selector(toggleUI))

@@ -130,6 +130,7 @@ public class PlayerActivity extends Activity {
     chans = opts.optJSONArray("list");
     chIndex = opts.optInt("index", 0);
     ep.mode = opts.optInt("enh", 0);
+    ep.pic = opts.optInt("pic", 0);
     ep.year = opts.optInt("year", 0);
     DisplayMetrics dm = getResources().getDisplayMetrics();
     ep.targetH = Math.min(Math.max(Math.min(dm.widthPixels, dm.heightPixels), 720), 2160);

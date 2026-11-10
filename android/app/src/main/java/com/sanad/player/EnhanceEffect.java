@@ -25,6 +25,7 @@ public final class EnhanceEffect implements GlEffect {
   /** Shared, live-tweakable parameters (read every frame). */
   public static final class Params {
     public volatile int mode = 0;          // 0 auto, 1 off, 2 normal, 3 strong
+    public volatile int pic = 0;           // 0 natural, 1 vivid, 2 cinematic, 3 sport, 4 anime, 5 night
     public volatile boolean compare = false;
     public volatile int targetH = 1080;    // screen height in px
     public volatile int year = 0;          // release year if known
@@ -55,6 +56,7 @@ public final class EnhanceEffect implements GlEffect {
       "uniform vec2 uOut;\n" +
       "uniform vec4 uA;\n" +   // x denoise, y sharp, z sat, w mode(0 off,1 on)
       "uniform vec4 uB;\n" +   // x lo, y hi, z gamma, w split (<0 none)
+      "uniform vec4 uC;\n" +   // picture mode: x contrast, y gamma, z warmth
       "varying vec2 vUv;\n" +
       "vec3 T(vec2 u){ return texture2D(uTex,u).rgb; }\n" +
       "vec3 catmull(vec2 uv){\n" +
@@ -102,6 +104,9 @@ public final class EnhanceEffect implements GlEffect {
       "  res = pow(res, vec3(uB.z));\n" +
       "  float l = dot(res, vec3(0.299,0.587,0.114));\n" +
       "  res = clamp(mix(vec3(l),res,uA.z),0.0,1.0);\n" +
+      "  res = clamp((res-0.5)*uC.x+0.5,0.0,1.0);\n" +
+      "  res = pow(res, vec3(uC.y));\n" +
+      "  res = clamp(res + vec3(uC.z, uC.z*0.25, -uC.z),0.0,1.0);\n" +
       "  gl_FragColor = vec4(res,1.0);\n" +
       "}\n";
 
@@ -117,7 +122,7 @@ public final class EnhanceEffect implements GlEffect {
   static final class Program extends BaseGlShaderProgram {
     final Params p;
     int prog, progStats, aPos, aPosS;
-    int uTex, uIn, uOut, uA, uB, uTexS, uInS;
+    int uTex, uIn, uOut, uA, uB, uC, uTexS, uInS;
     final FloatBuffer quad;
     int statsTex = 0, statsFbo = 0, frameN = 0;
     static final int SW = 32, SH = 18;
@@ -144,6 +149,7 @@ public final class EnhanceEffect implements GlEffect {
       uOut = GLES20.glGetUniformLocation(prog, "uOut");
       uA = GLES20.glGetUniformLocation(prog, "uA");
       uB = GLES20.glGetUniformLocation(prog, "uB");
+      uC = GLES20.glGetUniformLocation(prog, "uC");
       aPosS = GLES20.glGetAttribLocation(progStats, "aPos");
       uTexS = GLES20.glGetUniformLocation(progStats, "uTex");
       uInS = GLES20.glGetUniformLocation(progStats, "uIn");
@@ -286,12 +292,26 @@ public final class EnhanceEffect implements GlEffect {
     }
 
     static float ema(float cur, float tgt, float a) { return cur + (tgt - cur) * a; }
+    /** sat, contrast, gamma, warmth, extra sharpen */
+    static float[] picPreset(int i) {
+      switch (i) {
+        case 1: return new float[]{1.22f, 1.08f, 0.96f, 0.012f, 0.05f};  // vivid
+        case 2: return new float[]{0.94f, 1.06f, 1.06f, 0.035f, -0.1f};  // cinematic
+        case 3: return new float[]{1.10f, 1.05f, 1.0f, 0f, 0.2f};        // sport
+        case 4: return new float[]{1.16f, 1.04f, 0.98f, 0f, 0.15f};      // anime
+        case 5: return new float[]{0.92f, 0.97f, 1.12f, 0.02f, -0.05f};  // night
+        default: return new float[]{1f, 1f, 1f, 0f, 0f};
+      }
+    }
 
     @Override
     public void drawFrame(int inputTexId, long presentationTimeUs) throws VideoFrameProcessingException {
       try {
-        boolean on = p.mode != 1;
-        if (on && (frameN++ % 24 == 0)) runStats(inputTexId);
+        boolean plain = p.mode == 1;                   // enhancement off → picture mode only
+        boolean on = !plain || p.pic != 0;
+        if (!plain && (frameN++ % 24 == 0)) runStats(inputTexId);
+        if (plain) { tDen = 0; tSharp = 0; tSat = 1f; tLo = 0; tHi = 1f; tGamma = 1f; }
+        float[] pm = picPreset(p.pic);
         float a = firstStats ? 1f : 0.06f;
         firstStats = false;
         p.denoise = ema(p.denoise, tDen, a);
@@ -308,8 +328,9 @@ public final class EnhanceEffect implements GlEffect {
         GLES20.glUniform1i(uTex, 0);
         GLES20.glUniform2f(uIn, p.inW, p.inH);
         GLES20.glUniform2f(uOut, p.outW, p.outH);
-        GLES20.glUniform4f(uA, p.denoise, p.sharp, p.sat, on ? 1f : 0f);
+        GLES20.glUniform4f(uA, p.denoise, Math.max(0f, p.sharp + pm[4]), p.sat * pm[0], on ? 1f : 0f);
         GLES20.glUniform4f(uB, p.lo, p.hi, p.gamma, p.compare && on ? 0.5f : -1f);
+        GLES20.glUniform4f(uC, pm[1], pm[2], pm[3], 0f);
         bindQuad(aPos);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         GLES20.glDisableVertexAttribArray(aPos);

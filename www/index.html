@@ -11,6 +11,57 @@
 <script src="lib/fflate.js"></script>
 <style>
 :root{--bg:#0a0c0f;--p1:#101317;--p2:#161a20;--p3:#1f242c;--p4:#2a3039;--ln:#232931;--tx:#eef1f5;--mu:#8b95a3;--mu2:#5c6674;--ac:#4a90ff;--foc:#e8ecf1;--gold:#f5c518;--red:#ff4d4d;--ok:#3ccf7a;--CHW:280px;--rail:68px}
+
+/* ===== Settings menu (IPTV Expert style) ===== */
+.sth{height:100%;overflow:auto;padding:30px 48px 80px;max-width:1100px;margin:0 auto}
+.acard{display:flex;gap:18px;background:linear-gradient(135deg,var(--p2),var(--p1));border:1px solid var(--ln);border-radius:22px;padding:26px;margin-top:8px;align-items:stretch}
+.acard .acl{flex:1.3;display:flex;flex-direction:column;gap:8px;justify-content:center}.acard .ak{font-size:11px;letter-spacing:2px;color:var(--ac);font-weight:800}.acard h3{font-size:30px;line-height:1.1;margin:2px 0}.acard p{color:var(--mu);font-size:14px;max-width:520px}.acard .btn.p{align-self:flex-start;margin-top:10px;padding:12px 22px;font-size:15px;border-radius:14px}
+.acard .acr{flex:1;display:flex;flex-direction:column;gap:12px;justify-content:center}
+.atile{display:grid;grid-template-columns:44px 1fr;grid-template-rows:auto auto;column-gap:14px;align-items:center;text-align:start;background:var(--p3);border:1px solid var(--ln);border-radius:16px;padding:14px 16px;cursor:pointer}.atile .ai{grid-row:1/3;width:44px;height:44px;border-radius:12px;background:var(--p4);display:grid;place-items:center;font-size:20px}.atile b{font-size:15px}.atile small{color:var(--mu);font-size:12.5px}.atile:hover{border-color:var(--ac)}
+.smenu{margin-top:26px;background:var(--p2);border:1px solid var(--ln);border-radius:20px;overflow:hidden}.smh{padding:14px 20px 6px;font-weight:800;font-size:14px;color:var(--mu)}
+.srow{display:flex;align-items:center;gap:16px;width:100%;padding:15px 20px;border-top:1px solid var(--ln);background:transparent;text-align:start;cursor:pointer}.srow:first-of-type{border-top:0}.srow:hover,.srow.foc{background:var(--p3)}.srow .si{width:34px;height:34px;border-radius:10px;background:var(--p4);display:grid;place-items:center;font-size:17px;flex-shrink:0}.srow .st2{flex:1;display:flex;flex-direction:column;gap:2px}.srow b{font-size:15.5px}.srow small{color:var(--mu);font-size:12.5px}.srow .chev{color:var(--mu2);font-size:22px}
+.stp{height:100%;display:flex;flex-direction:column}.stph{display:flex;align-items:center;gap:18px;padding:22px 40px 0}.stph h2{margin:0;padding:0;font-size:24px}.stp .stc{padding-top:14px}
+html[data-theme=neon] .acard{background:linear-gradient(135deg,#0b0b12,#05050a);border-color:#1e1f2a;box-shadow:0 0 40px #7a5cff14 inset}
+html[data-theme=neon] .srow .si,html[data-theme=neon] .atile .ai{background:#111218;border:1px solid #1e1f2a}
+html[data-theme=neon] .smenu{background:#08080c}
+.thm{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:12px}.thm button{text-align:start;border-radius:18px;padding:16px;border:2px solid var(--ln);background:var(--p2);cursor:pointer}.thm button.on{border-color:var(--ac);box-shadow:0 0 0 3px color-mix(in srgb,var(--ac) 25%,transparent)}.thm .sw2{height:70px;border-radius:12px;margin-bottom:12px;position:relative;overflow:hidden}.thm b{font-size:16px;display:block}.thm small{color:var(--mu)}
+.thm .sw2.neon{background:#000;box-shadow:inset 0 0 0 1px #1e1f2a}.thm .sw2.neon:after{content:'';position:absolute;inset:14px 60% 14px 14px;border-radius:8px;background:linear-gradient(135deg,#00e5ff,#7a5cff,#ff2bd6);box-shadow:0 0 18px #00e5ff88}
+.thm .sw2.classic{background:#0a0c0f;box-shadow:inset 0 0 0 1px #232931}.thm .sw2.classic:after{content:'';position:absolute;inset:14px 60% 14px 14px;border-radius:8px;background:#4a90ff}
+.thm .sw2.midnight{background:#050a18;box-shadow:inset 0 0 0 1px #1b2748}.thm .sw2.midnight:after{content:'';position:absolute;inset:14px 60% 14px 14px;border-radius:8px;background:#5aa0ff}
+/* ===== Themes ===== */
+html[data-theme=neon]{--bg:#000;--p1:#070709;--p2:#0c0c10;--p3:#141418;--p4:#1c1c22;--ln:#1e1f27;--tx:#f2f4ff;--mu:#8e94ad;--mu2:#5a6078;--ac:#00e5ff;--ac2:#ff2bd6;--foc:#00e5ff;--gold:#ffd166;--ok:#2cf5a0;--glow:0 0 0 2px #00e5ff,0 0 18px #00e5ff99,0 0 42px #00e5ff33}
+html[data-theme=neon] body{background:radial-gradient(1200px 600px at 100% -10%,#12032466 0%,transparent 60%),radial-gradient(900px 500px at -10% 110%,#00202866 0%,transparent 60%),#000}
+html[data-theme=neon] #rail{background:#000;border-inline-end:1px solid #14151c;box-shadow:inset -1px 0 0 #00e5ff14}
+html[data-theme=neon] #rail .ri.on{background:linear-gradient(135deg,#00e5ff,#7a5cff);color:#000;box-shadow:0 0 16px #00e5ff66}
+html[data-theme=neon] #rail .ri:hover{background:#0f1016;color:#fff}
+html[data-theme=neon] .pc .im{border:1px solid #1a1b24;background:#0a0a0e}
+html[data-theme=neon] .pc.foc .im,html[data-theme=neon] .pc:hover .im{transform:scale(1.05);box-shadow:0 0 0 2px #00e5ff,0 0 22px #00e5ff88,0 18px 40px #000}
+html[data-theme=neon] .pc .q4,html[data-theme=neon] .tag.q{background:#000c;border:1px solid #00e5ff66;color:#00e5ff;text-shadow:0 0 8px #00e5ff}
+html[data-theme=neon] .btn.p,html[data-theme=neon] .bt.p{background:linear-gradient(135deg,#00e5ff,#7a5cff 60%,#ff2bd6);color:#000;border-color:transparent;box-shadow:0 0 18px #00e5ff44;font-weight:800}
+html[data-theme=neon] .bt.p:hover,html[data-theme=neon] .bt.p:focus-visible{background:linear-gradient(135deg,#5ff0ff,#9a84ff 60%,#ff6ae3);box-shadow:0 0 26px #00e5ff77}
+html[data-theme=neon] .bt,html[data-theme=neon] .btn{background:#0d0d12;border:1px solid #22232e}
+html[data-theme=neon] .bt:hover,html[data-theme=neon] .btn:hover{border-color:#00e5ff88;box-shadow:0 0 12px #00e5ff33}
+html[data-theme=neon] .chip{background:#0d0d12;border-color:#22232e}
+html[data-theme=neon] .chip.on{background:#00e5ff1a;border-color:#00e5ff;color:#00e5ff;box-shadow:0 0 12px #00e5ff44;text-shadow:0 0 6px #00e5ff}
+html[data-theme=neon] .tabs button.on{background:#00e5ff;color:#000;box-shadow:0 0 14px #00e5ff77}
+html[data-theme=neon] .opt{background:#0a0a0f;border:1px solid #1b1c26;border-radius:16px}
+html[data-theme=neon] .opt:hover{border-color:#00e5ff44}
+html[data-theme=neon] .in{background:#000;border-color:#22232e}
+html[data-theme=neon] .in:focus{border-color:#00e5ff;box-shadow:0 0 0 3px #00e5ff22}
+html[data-theme=neon] .sw{background:#1c1c24}
+html[data-theme=neon] .sw.on{background:linear-gradient(90deg,#00e5ff,#7a5cff);box-shadow:0 0 12px #00e5ff66}
+html[data-theme=neon] .cc{background:#050507;border-inline-end-color:#15161e}
+html[data-theme=neon] .cc.on,html[data-theme=neon] .cc.foc{background:#0c0f16;box-shadow:inset 3px 0 0 #00e5ff}
+html[data-theme=neon] .cc.on .nm{color:#00e5ff;text-shadow:0 0 8px #00e5ff66}
+html[data-theme=neon] .qv.on{background:#00e5ff1a;color:#00e5ff;border-color:#00e5ff}
+html[data-theme=neon] h2,html[data-theme=neon] .hero h1{background:linear-gradient(90deg,#fff,#b9f3ff 60%,#ffb3ef);-webkit-background-clip:text;background-clip:text;color:transparent}
+html[data-theme=neon] h4{color:#00e5ff;letter-spacing:.3px}
+html[data-theme=neon] #stage{box-shadow:0 0 0 1px #00e5ff33,0 0 40px #00e5ff14}
+html[data-theme=neon] #toast{background:#06060aee;border:1px solid #00e5ff66;box-shadow:0 0 20px #00e5ff33;color:#eafcff}
+html[data-theme=neon] .menu,html[data-theme=neon] .sheet,html[data-theme=neon] .modal{background:#07070bf2;border:1px solid #1e1f2a;box-shadow:0 0 40px #00e5ff1a,0 30px 80px #000}
+html[data-theme=neon] ::-webkit-scrollbar-thumb{background:#1f2030;border-radius:8px}
+html[data-theme=neon] .pc .hdr{box-shadow:0 0 10px #ffd00066}
+html[data-theme=midnight]{--bg:#050a18;--p1:#0a1226;--p2:#0e1730;--p3:#15203f;--p4:#1d2a50;--ln:#1b2748;--tx:#eaf0ff;--mu:#8fa0c8;--mu2:#5b6a93;--ac:#5aa0ff;--foc:#9cc4ff;--gold:#ffd166;--ok:#49e39a}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--tx);font-family:Tajawal,system-ui,-apple-system,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
 button,input,select{font:inherit;color:inherit}
@@ -400,7 +451,7 @@ const idb={db:null,
 };
 const S={
   playlists:store.get('playlists',[]),active:store.get('active',null),
-  settings:Object.assign({fmt:'m3u8',tmdb:'',epgShift:0,clock24:false,autoplay:true,autoFs:true,aspect:'contain',enh:'auto',motion:'light',audioLang:'',maxq:true,subAuto:true,subLang:'ar',subSize:'m',subBg:false,subColor:'#ffffff',subdl:'',osKey:'',merge:false,pin:'',autoProbe:true,forceAr:true,mtEngine:'auto',speechSubs:true,animeJa:true,enhLive:true,enhMovies:true,enhSeries:true,setupDone:false,vf:{}},store.get('settings',{})),
+  settings:Object.assign({fmt:'m3u8',tmdb:'',epgShift:0,clock24:false,autoplay:true,autoFs:true,aspect:'contain',enh:'auto',pic:'natural',theme:'neon',motion:'light',audioLang:'',maxq:true,subAuto:true,subLang:'ar',subSize:'m',subBg:false,subColor:'#ffffff',subdl:'',osKey:'',merge:false,pin:'',autoProbe:true,forceAr:true,mtEngine:'auto',speechSubs:true,animeJa:true,enhLive:true,enhMovies:true,enhSeries:true,setupDone:false,vf:{}},store.get('settings',{})),
   favs:new Set(store.get('favs',[])),pfavs:new Set(store.get('pfavs',[])),unlocked:false,tracks:store.get('tracks',{}),anime:store.get('anime',{}),locks:store.get('locks',{}),noTrack:new Set(store.get('noTrack',[])),dls:store.get('dls',[]),recents:store.get('recents',[]),resume:store.get('resume',{}),hidden:store.get('hidden',{}),
   live:[],movies:[],series:[],epg:{},epgNames:{},info:null,serverTz:null,gOrder:null,meta:{},idx:null,qsel:{},subsFound:{},
   screen:'tv',cur:null,stack:[],
@@ -429,6 +480,7 @@ const isAnimeG=(kind,g)=>{const ov=((S.anime[S.active]||{})[kind]||{});return ov
 const gName=(k,g)=>(isLockedG(k,g)?(S.gOpen.has(gKey(k,g))?'🔓 ':'🔒 '):'')+(isAnimeG(k,g)?'🎌 ':'')+g;
 function lockAllGroups(){S.gOpen.clear();for(const k of ['movies','series'])if(S.vodGroup[k]&&isLockedG(k,S.vodGroup[k]))S.vodGroup[k]='__all';if(S.tvGroup&&isLockedG('live',S.tvGroup)){S.tvGroup='__all';S.ch=filterLive()}}
 const visible=it=>(!isPriv(it.key)||S.unlocked)&&!gLocked(kindOf(it),it.group);
+const applyTheme=()=>{document.documentElement.setAttribute('data-theme',S.settings.theme||'neon')};applyTheme();
 const pl=()=>S.playlists.find(p=>p.id===S.active);
 /* which subscription does this item come from? (keys are '<playlistId>|…'); falls back to the active one */
 const plOf=it=>{const id=it&&it.key?String(it.key).split('|')[0]:null;return (id&&S.playlists.find(p=>p.id===id))||pl()};
@@ -436,6 +488,8 @@ const plName=it=>{const p=plOf(it);return p&&S.playlists.length>1?p.name:''};
 const mergeOn=()=>!!S.settings.merge&&S.playlists.length>1;
 const NOCAT=()=>L('بدون تصنيف','Uncategorized');
 
+/* subtitle pipeline talks quietly: status lives in the 💬 menu, never as a failure banner over the film */
+function subNote(m){S.subNote=m;console.info('subs:',m);if(S.pm||S.vod)try{renderBars()}catch(e){}}
 let tT;function toast(m,ms=3500,act){const t=$('#toast');t.textContent=m;t.onclick=act?()=>{t.classList.remove('show');act()}:null;t.style.cursor=act?'pointer':'';t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),ms)}
 const fmtT=t=>new Date(t).toLocaleTimeString(LOC(),{hour:'numeric',minute:'2-digit',hourCycle:S.settings.clock24?'h23':'h12'});
 function dayDiff(t){const a=new Date(t),b=new Date();return Math.round((new Date(a.getFullYear(),a.getMonth(),a.getDate())-new Date(b.getFullYear(),b.getMonth(),b.getDate()))/864e5)}
@@ -681,6 +735,11 @@ const srcRes=()=>{const v=V();return v.videoWidth?`${arN(v.videoWidth)}×${arN(v
 
 /* ================= تحسين الصورة ورفع الدقة (WebGL) ================= */
 const ENH_LV={off:null,auto:'auto',normal:{sharp:.45,sat:1.04,con:1.03},strong:{sharp:.9,sat:1.1,con:1.06}};
+/* picture modes — like a TV's "Vivid / Cinema" presets, layered on top of the enhancer */
+const PIC={natural:{sat:1,con:1,gam:1,warm:0,sharp:0},vivid:{sat:1.22,con:1.08,gam:.96,warm:.012,sharp:.05},cinematic:{sat:.94,con:1.06,gam:1.06,warm:.035,sharp:-.1},sport:{sat:1.1,con:1.05,gam:1,warm:0,sharp:.2},anime:{sat:1.16,con:1.04,gam:.98,warm:0,sharp:.15},night:{sat:.92,con:.97,gam:1.12,warm:.02,sharp:-.05}};
+const PIC_N={natural:['طبيعي','Natural'],vivid:['زاهي Vivid','Vivid'],cinematic:['سينمائي Cinematic','Cinematic'],sport:['رياضة','Sport'],anime:['أنمي','Anime'],night:['ليلي','Night']};
+const PIC_K=Object.keys(PIC);const picIdx=()=>Math.max(0,PIC_K.indexOf(S.settings.pic||'natural'));
+function picOf(){return PIC[S.settings.pic]||PIC.natural}
 const ENH_NAMES=()=>({auto:L('تلقائي','Auto'),off:L('إيقاف','Off'),normal:L('عادي','Normal'),strong:L('قوي','Strong')});
 const MOTION_NAMES=()=>({off:L('إيقاف','Off'),light:L('خفيف','Light'),full:L('كامل','Full')});
 const motionOn=()=>S.settings.motion&&S.settings.motion!=='off';
@@ -689,7 +748,7 @@ function autoEnhName(){const h=V().videoHeight||0;const lv=enhLevel();return L('
 const ENH={gl:null,ok:null,run:false,blocked:false,out:'',
   VS:'attribute vec2 p;varying vec2 uv;uniform vec2 uo;uniform vec2 us;uniform float fy;void main(){vec2 t=p*.5+.5;uv=uo+vec2(t.x,fy>0.5?1.0-t.y:t.y)*us;gl_Position=vec4(p,0.,1.);}',
   FS1:'precision highp float;uniform sampler2D texA;uniform sampler2D texB;uniform float mixv;uniform vec2 ts;varying vec2 uv;vec3 cr(sampler2D tex){vec2 sp=uv*ts;vec2 t1=floor(sp-.5)+.5;vec2 f=sp-t1;vec2 w0=f*(-.5+f*(1.-.5*f));vec2 w1=1.+f*f*(-2.5+1.5*f);vec2 w2=f*(.5+f*(2.-1.5*f));vec2 w3=f*f*(-.5+.5*f);vec2 w12=w1+w2;vec2 o12=w2/w12;vec2 t0=(t1-1.)/ts;vec2 t3=(t1+2.)/ts;vec2 tc=(t1+o12)/ts;vec3 r=texture2D(tex,vec2(t0.x,t0.y)).rgb*w0.x*w0.y+texture2D(tex,vec2(tc.x,t0.y)).rgb*w12.x*w0.y+texture2D(tex,vec2(t3.x,t0.y)).rgb*w3.x*w0.y+texture2D(tex,vec2(t0.x,tc.y)).rgb*w0.x*w12.y+texture2D(tex,vec2(tc.x,tc.y)).rgb*w12.x*w12.y+texture2D(tex,vec2(t3.x,tc.y)).rgb*w3.x*w12.y+texture2D(tex,vec2(t0.x,t3.y)).rgb*w0.x*w3.y+texture2D(tex,vec2(tc.x,t3.y)).rgb*w12.x*w3.y+texture2D(tex,vec2(t3.x,t3.y)).rgb*w3.x*w3.y;return r;}void main(){vec3 r=cr(texA);if(mixv<0.999)r=mix(cr(texB),r,mixv);gl_FragColor=vec4(clamp(r,0.,1.),1.);}',
-  FS2:'precision highp float;uniform sampler2D tex;uniform vec2 px;uniform float sharp;uniform float sat;uniform float con;varying vec2 uv;void main(){vec3 a=texture2D(tex,uv+vec2(-px.x,-px.y)).rgb;vec3 b=texture2D(tex,uv+vec2(0.,-px.y)).rgb;vec3 c=texture2D(tex,uv+vec2(px.x,-px.y)).rgb;vec3 d=texture2D(tex,uv+vec2(-px.x,0.)).rgb;vec3 e=texture2D(tex,uv).rgb;vec3 f=texture2D(tex,uv+vec2(px.x,0.)).rgb;vec3 g=texture2D(tex,uv+vec2(-px.x,px.y)).rgb;vec3 h=texture2D(tex,uv+vec2(0.,px.y)).rgb;vec3 i=texture2D(tex,uv+vec2(px.x,px.y)).rgb;vec3 mn=min(min(min(d,e),min(f,b)),h);vec3 mn2=min(mn,min(min(a,c),min(g,i)));mn+=mn2;vec3 mx=max(max(max(d,e),max(f,b)),h);vec3 mx2=max(mx,max(max(a,c),max(g,i)));mx+=mx2;vec3 amp=sqrt(clamp(min(mn,2.-mx)/max(mx,vec3(1e-5)),0.,1.));vec3 w=amp*(-1./mix(8.,5.,sharp));vec3 col=clamp((b*w+d*w+f*w+h*w+e)/(1.+4.*w),0.,1.);float l=dot(col,vec3(.2126,.7152,.0722));col=mix(vec3(l),col,sat);col=(col-.5)*con+.5;gl_FragColor=vec4(clamp(col,0.,1.),1.);}',
+  FS2:'precision highp float;uniform sampler2D tex;uniform vec2 px;uniform float sharp;uniform float sat;uniform float con;uniform float gam;uniform float warm;varying vec2 uv;void main(){vec3 a=texture2D(tex,uv+vec2(-px.x,-px.y)).rgb;vec3 b=texture2D(tex,uv+vec2(0.,-px.y)).rgb;vec3 c=texture2D(tex,uv+vec2(px.x,-px.y)).rgb;vec3 d=texture2D(tex,uv+vec2(-px.x,0.)).rgb;vec3 e=texture2D(tex,uv).rgb;vec3 f=texture2D(tex,uv+vec2(px.x,0.)).rgb;vec3 g=texture2D(tex,uv+vec2(-px.x,px.y)).rgb;vec3 h=texture2D(tex,uv+vec2(0.,px.y)).rgb;vec3 i=texture2D(tex,uv+vec2(px.x,px.y)).rgb;vec3 mn=min(min(min(d,e),min(f,b)),h);vec3 mn2=min(mn,min(min(a,c),min(g,i)));mn+=mn2;vec3 mx=max(max(max(d,e),max(f,b)),h);vec3 mx2=max(mx,max(max(a,c),max(g,i)));mx+=mx2;vec3 amp=sqrt(clamp(min(mn,2.-mx)/max(mx,vec3(1e-5)),0.,1.));vec3 w=amp*(-1./mix(8.,5.,sharp));vec3 col=clamp((b*w+d*w+f*w+h*w+e)/(1.+4.*w),0.,1.);float l=dot(col,vec3(.2126,.7152,.0722));col=mix(vec3(l),col,sat);col=(col-.5)*con+.5;col=pow(clamp(col,0.,1.),vec3(gam));col+=vec3(warm,warm*.25,-warm);gl_FragColor=vec4(clamp(col,0.,1.),1.);}',
   init(){if(this.ok!==null)return this.ok;try{const c=$('#enh');const gl=c.getContext('webgl',{alpha:false,antialias:false,premultipliedAlpha:false,preserveDrawingBuffer:false,powerPreference:'high-performance'});if(!gl)return this.ok=false;
     const sh=(t,s)=>{const o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);if(!gl.getShaderParameter(o,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(o));return o};
     const prog=fs=>{const p=gl.createProgram();gl.attachShader(p,sh(gl.VERTEX_SHADER,this.VS));gl.attachShader(p,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(p));return p};
@@ -697,7 +756,7 @@ const ENH={gl:null,ok:null,run:false,blocked:false,out:'',
     const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
     const mk=()=>{const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);return t};
     this.vt=mk();this.vt2=mk();this.ft=mk();this.fb=gl.createFramebuffer();this.gl=gl;this.fw=0;this.fh=0;return this.ok=true}catch(e){console.warn('enh',e);return this.ok=false}},
-  active(){if(S.vod&&isHdr(S.vod.it||S.vod))return false;return (!!enhLevel()||motionOn())&&!this.blocked&&this.ok!==false&&enhForKind(S.vod?(S.vod.seriesKey?'series':'movie'):'live')},
+  active(){if(S.vod&&isHdr(S.vod.it||S.vod))return false;return (!!enhLevel()||motionOn()||(S.settings.pic&&S.settings.pic!=='natural'))&&!this.blocked&&this.ok!==false&&enhForKind(S.vod?(S.vod.seriesKey?'series':'movie'):'live')},
   hz:0,fps:0,iv:41.7,newFrame:false,haveFrame:false,t0:0,lastMT:-1,_rafT:0,_rafE:0,
   vfc(){const v=V();if(!v.requestVideoFrameCallback||this.vfcOn)return;this.vfcOn=true;const cb=(now,md)=>{this.newFrame=true;this.t0=performance.now();if(md&&this.lastMT>=0){const d=(md.mediaTime-this.lastMT)*1000/(v.playbackRate||1);if(d>5&&d<200)this.iv=this.iv*.7+d*.3}if(md)this.lastMT=md.mediaTime;this.fps=Math.round(1000/this.iv);v.requestVideoFrameCallback(cb)};v.requestVideoFrameCallback(cb)},
   reset(){this.blocked=false;this.out='';this.lastKey='';this.haveFrame=false;this.lastMT=-1;this.fps=0;$('#stage').classList.remove('enh')},
@@ -720,9 +779,9 @@ const ENH={gl:null,ok:null,run:false,blocked:false,out:'',
     gl.bindFramebuffer(gl.FRAMEBUFFER,this.fb);gl.viewport(0,0,rw,rh);gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,this.vt2);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,this.vt);
     gl.useProgram(this.p1);gl.uniform1i(gl.getUniformLocation(this.p1,'texA'),0);gl.uniform1i(gl.getUniformLocation(this.p1,'texB'),1);
     draw(this.p1,{ts:[vw,vh],uo,us,fy:1,mixv:mo?alpha:1});
-    const lv=enhLevel()||{sharp:0,sat:1,con:1};gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.clearColor(0,0,0,1);gl.clear(gl.COLOR_BUFFER_BIT);
+    const lv0=enhLevel()||{sharp:0,sat:1,con:1},pm=picOf();const lv={sharp:Math.max(0,lv0.sharp+pm.sharp),sat:lv0.sat*pm.sat,con:lv0.con*pm.con,gam:pm.gam,warm:pm.warm};gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.clearColor(0,0,0,1);gl.clear(gl.COLOR_BUFFER_BIT);
     gl.viewport(Math.round((W-rw)/2),Math.round((H-rh)/2),rw,rh);gl.bindTexture(gl.TEXTURE_2D,this.ft);
-    draw(this.p2,{px:[1/rw,1/rh],uo:[0,0],us:[1,1],fy:0,sharp:lv.sharp,sat:lv.sat,con:lv.con});
+    draw(this.p2,{px:[1/rw,1/rh],uo:[0,0],us:[1,1],fy:0,sharp:lv.sharp,sat:lv.sat,con:lv.con,gam:lv.gam,warm:lv.warm});
     const o=`${rw}×${rh}`;if(o!==this.out){this.out=o;if(S.pm||S.vod)renderTop()}
     st.classList.add('enh')}
 };
@@ -875,7 +934,7 @@ function parseSubs(txt){txt=String(txt).replace(/^﻿/,'').replace(/\r\n?/g,'\n'
   return cues.sort((a,b)=>a.st-b.st)}
 function fmtCue(t){t=String(t).replace(/\{\\[^}]*\}/g,'').replace(/\\N/g,'\n').replace(/<(?!\/?[ibu]>)[^>]*>/gi,'');return esc(t).replace(/&lt;(\/?[ibu])&gt;/gi,'<$1>')}
 function applySubStyle(){const el=$('#subs');el.style.setProperty('--subsz',SUBSZ[S.settings.subSize]||4.4);el.classList.toggle('bg',!!S.settings.subBg);el.style.color=S.settings.subColor||'#fff'}
-function subsClear(){S.sub=null;S.subCtx=null;const el=$('#subs');if(el)el.innerHTML=''}
+function subsClear(){S.sub=null;S.subCtx=null;S.subNote='';const el=$('#subs');if(el)el.innerHTML=''}
 function setCues(cues,meta){if(!meta.ff)ffSubStop();S.sub={kind:'ext',cues,meta,offset:0,lastKey:''};subLoopStart();if(S.pm||S.vod)renderBars()}
 function subLoopStart(){applySubStyle();if(S.subLoop)return;S.subLoop=true;const loop=()=>{if(!S.sub){S.subLoop=false;$('#subs').innerHTML='';return}try{subTick()}catch(e){}requestAnimationFrame(loop)};requestAnimationFrame(loop)}
 function subTick(){const s=S.sub,v=V();let texts=[];
@@ -916,21 +975,21 @@ async function mtLines(lines,from){const todo=[],idx=[];const res=lines.map((l,i
   return res}
 /* translate the cues of the active subtitle in place: around the playhead first, then onwards */
 async function arabize(sub,from){if(!sub||sub.mt)return;sub.mt={from:from||'en',done:new Set(),busy:false,fail:0};sub.meta.label='🤖 '+L('عربي (ترجمة آلية) ← ','Arabic (machine) ← ')+lname(from||'en');sub.meta.lang='ar';
-  if(S.pm||S.vod)renderBars();toast(L('🤖 ما فيه ترجمة عربية — جاري ترجمة ','🤖 No Arabic subtitles — translating ')+lname(from||'en')+L(' للعربي تلقائياً',' to Arabic automatically'),3000);
+  if(S.pm||S.vod)renderBars();subNote(L('🤖 جاري ترجمة ','🤖 No Arabic subtitles — translating ')+lname(from||'en')+L(' للعربي تلقائياً',' to Arabic automatically'),3000);
   const step=async()=>{if(S.sub!==sub||sub.mt.busy)return;const cs=sub.cues;if(!cs.length){setTimeout(step,800);return}
     const t=curT();let i0=cs.findIndex(c=>c.en>=t-2);if(i0<0)i0=0;const pick=[];for(let i=i0;i<cs.length&&pick.length<40;i++)if(!sub.mt.done.has(i))pick.push(i);
     if(pick.length<40)for(let i=0;i<i0&&pick.length<40;i++)if(!sub.mt.done.has(i))pick.push(i);
     if(!pick.length){setTimeout(step,1500);return}
     sub.mt.busy=true;try{const src=pick.map(i=>cs[i].orig||cs[i].text);const tr=await mtLines(src.map(x=>String(x).replace(/<[^>]+>/g,'').replace(/\s*\n\s*/g,' ').trim()),sub.mt.from);
       if(S.sub!==sub)return;pick.forEach((i,j)=>{if(!cs[i].orig)cs[i].orig=cs[i].text;cs[i].text=tr[j]||cs[i].text;sub.mt.done.add(i)});sub.lastKey='';sub.mt.fail=0}
-    catch(e){sub.mt.fail++;if(sub.mt.fail===3)toast(L('تعذّرت الترجمة الآلية حالياً (تحقق من الإنترنت) — يعرض الترجمة الأصلية','Machine translation failed (check internet) — showing original subtitles'),4000)}
+    catch(e){sub.mt.fail++;if(sub.mt.fail===3)subNote(L('تعذّرت الترجمة الآلية حالياً (تحقق من الإنترنت) — يعرض الترجمة الأصلية','Machine translation failed (check internet) — showing original subtitles'),4000)}
     finally{sub.mt.busy=false}setTimeout(step,sub.mt.fail?Math.min(30000,3000*sub.mt.fail):150)};step()}
 /* speech → Arabic subtitles (Mac: Whisper on the GPU, then translation) */
 const SP={id:null,from:0,to:0};
 function speechStart(o,at){if(!isApp()||!S.settings.speechSubs)return false;mtHook();const id='sp'+Date.now();SP.id=id;SP.from=at;SP.to=at;
   S.sub={kind:'ext',cues:[],meta:{src:'AI',lang:'ar',label:'🤖 '+L('عربي (من الصوت · آلي)','Arabic (from speech · AI)'),speech:true},offset:0,lastKey:'',speech:id};subLoopStart();if(S.pm||S.vod)renderBars();
   window.sanad.aiCmd({type:'speech',id,url:o.url,start:Math.max(0,at-1),mtEngine:S.settings.mtEngine||'auto'});
-  toast(L('🤖 ما فيه أي ترجمة لهذا العمل — جاري توليد ترجمة عربية من الصوت (أول مرة ينزل محرك التعرّف على الكلام)','🤖 No subtitles at all — generating Arabic subtitles from the audio (first time downloads the speech model)'),5000);
+  subNote(L('🤖 ما فيه أي ترجمة لهذا العمل — جاري توليد ترجمة عربية من الصوت (أول مرة ينزل محرك التعرّف على الكلام)','🤖 No subtitles at all — generating Arabic subtitles from the audio (first time downloads the speech model)'),5000);
   clearInterval(SP.watch);SP.watch=setInterval(()=>{if(!S.sub||S.sub.speech!==id){clearInterval(SP.watch);window.sanad.aiCmd({type:'speechStop',id});return}const t=curT();if(t<SP.from-2||t>SP.to+90){window.sanad.aiCmd({type:'speechStop',id});const nid='sp'+Date.now();SP.id=nid;S.sub.speech=nid;SP.from=t;SP.to=t;window.sanad.aiCmd({type:'speech',id:nid,url:o.url,start:Math.max(0,t-1),mtEngine:S.settings.mtEngine||'auto'})}},2000);return true}
 function speechOnCues(d){if(!S.sub||S.sub.speech!==d.id)return;const cs=S.sub.cues;for(const c of d.cues)cs.push(c);cs.sort((a,b)=>a.st-b.st);S.sub.lastKey='';SP.to=Math.max(SP.to,d.to||0)}
 function speechOnState(d){if(!S.sub||S.sub.speech!==d.id)return;if(d.state==='model')S.sub.meta.label='🤖 '+L('تنزيل محرك الكلام… ','Downloading speech model… ')+(d.pct!=null?arN(Math.round(d.pct))+'٪':'');else if(d.state==='run')S.sub.meta.label='🤖 '+L('عربي (من الصوت · آلي)','Arabic (from speech · AI)');else if(d.state==='error'){toast(L('تعذّر توليد الترجمة من الصوت: ','Speech subtitles failed: ')+(d.error||''),5000)}if(S.pm||S.vod)renderBars()}
@@ -960,8 +1019,8 @@ async function subSearch(o,auto){const ctx=S.subCtx;if(!ctx||!o.subItem)return;c
   // last resort: is there another copy of this film in the subscription that carries Arabic subs / audio?
   if(o.subItem&&o.subItem.kind==='movie'){const alt=movieVersions(o.subItem).find(v=>v.key!==o.key&&(()=>{const t=S.tracks[v.key];return t&&t.s&&t.s.some(x=>x.l==='ar')||nameHints(v).sub})());
     if(alt){toast(L('💡 فيه نسخة ثانية من هذا الفيلم فيها ترجمة عربية — اضغط هنا للتبديل لها','💡 Another copy of this film has Arabic subtitles — click to switch'),9000,()=>{S.qsel[norm(o.subItem.name)+'|'+(o.subItem.year||'')]=alt.key;const pos=curT();getMeta(o.subItem).catch(()=>({})).then(m=>playMovie(o.subItem,m||{},true));if(pos>5)setTimeout(()=>{const v=V();if(v)v.currentTime=pos},1500)});return}}
-  toast(L(`ما لقيت ترجمة ${langAdj(S.settings.subLang)} لهذا العمل${(S.settings.subdl||'').trim()?'':' — تقدر تضيف مصدر SubDL من الإعدادات ← الترجمة'}. تقدر تختار من قائمة 💬`,`No ${langName(S.settings.subLang)} subtitles found${(S.settings.subdl||'').trim()?'':' — enable SubDL in Settings → Subtitles for more'}. You can pick from the 💬 menu`),6000)}
-function subMenu(){const it=[];const o=S.vod;const ctx=S.subCtx;const cur=S.sub&&S.sub.meta;
+  subNote(L(`ما لقيت ترجمة ${langAdj(S.settings.subLang)} لهذا العمل${(S.settings.subdl||'').trim()?'':' — تقدر تضيف مصدر SubDL من الإعدادات ← الترجمة'}. تقدر تختار من قائمة 💬`,`No ${langName(S.settings.subLang)} subtitles found${(S.settings.subdl||'').trim()?'':' — enable SubDL in Settings → Subtitles for more'}. You can pick from the 💬 menu`),6000)}
+function subMenu(){const _note=S.subNote?[{label:'ℹ️ '+S.subNote}]:[];const it=[];const o=S.vod;const ctx=S.subCtx;const cur=S.sub&&S.sub.meta;
   it.push({label:L('إيقاف الترجمة','Subtitles off'),on:!S.sub,act:subsOff});
   if(S.sub&&S.sub.kind==='ext'){it.push({label:L('مزامنة: ','Sync: ')+(S.sub.offset>0?'+':'')+arN(S.sub.offset.toFixed(2))+L(' ث — اضغط للتصفير',' s — click to reset'),act:()=>{S.sub.offset=0;S.sub.lastKey=''},keep:true},
     {label:L('⏪ الترجمة متأخرة عن الكلام؟ قدّمها ¼ ثانية','⏪ Subtitles late? Show ¼ s earlier'),act:()=>subShift(-0.25),keep:true},{label:L('⏩ الترجمة مستعجلة؟ أخّرها ¼ ثانية','⏩ Subtitles early? Show ¼ s later'),act:()=>subShift(0.25),keep:true})}
@@ -975,7 +1034,7 @@ function subMenu(){const it=[];const o=S.vod;const ctx=S.subCtx;const cur=S.sub&
   it.push({label:'📂 '+L('ترجمة من ملف في جهازك…','Load a subtitle file…'),act:()=>$('#subFile').click()});
   it.push({label:L('حجم الخط: ','Font size: ')+SUBSZN()[S.settings.subSize],act:cycleSubSize,keep:true});
   it.push({label:L('خلفية خلف النص: ','Text background: ')+(S.settings.subBg?L('تشغيل','On'):L('إيقاف','Off')),act:()=>{S.settings.subBg=!S.settings.subBg;saveSet();applySubStyle()},keep:true});
-  return it}
+  return _note.concat(it)}
 const openSubs=()=>openSide('menu',subMenu,L('الترجمة','Subtitles'));
 async function loadSubFile(f){try{let u8=new Uint8Array(await f.arrayBuffer());if(u8[0]===0x50&&u8[1]===0x4b){const o=S.vod;u8=unzipPick(u8,o&&o.subSeason,o&&o.subEp)}
   const cues=parseSubs(decodeSub(u8,S.settings.subLang));if(!cues.length)throw new Error('empty');setCues(cues,{src:L('ملف','File'),lang:'',label:f.name});toast(L('✓ تم تحميل ملف الترجمة','✓ Subtitle file loaded'))}catch(e){toast(L('تعذّر قراءة ملف الترجمة','Couldn\'t read the subtitle file'))}}
@@ -1006,6 +1065,7 @@ async function loadActive(){
     buildIndex();S.loading=false;S.tvGroup='__all';S.vodGroup={movies:'__all',series:'__all'};S.vf=0;S.ch=filterLive();S.gT=floor30(Date.now())-1800e3;S.gFocusT=null;
     const last=store.get('lastCh',null);const li=S.ch.findIndex(c=>c.key===last);S.gRow=li>=0?li:0;
     toast(L(`تم التحميل: ${arN(S.live.length)} قناة · ${arN(S.movies.length)} فيلم · ${arN(S.series.length)} مسلسل`,`Loaded: ${S.live.length} channels · ${S.movies.length} movies · ${S.series.length} series`));
+    if(!S._startApplied){S._startApplied=true;const st=S.settings.startTab;if(st&&['tv','movies','series'].includes(st))S.screen=st}
     render();if(!S.settings.setupDone)setTimeout(openSetup,600);if(S.settings.autoplay&&li>=0&&S.screen==='tv')playChannel(S.ch[li]);
     loadEPG(S.epgUrls&&S.epgUrls.length?S.epgUrls.join(','):epgUrl);
   }catch(e){S.loading=false;S.error=friendlyErr(e);render()}
@@ -1315,14 +1375,17 @@ function closeSide(){S.side=null;renderSide();showUI()}
 function openMenu(){openSide('menu',S.vod?vodMenu:liveMenu)}
 function menuBack(){const sd=S.side;if(sd&&sd.type==='menu'&&sd.stack.length>1){sd.stack.pop();sd.idx=0;renderSide()}else closeSide()}
 const enhItem=()=>({label:L('تحسين الصورة: ','Picture enhancement: ')+enhName(),act:cycleEnh,keep:true});
-function liveMenu(){const ch=S.playing;const it=[enhItem(),motionItem(),{label:L('الجودة','Quality'),sub:qualityItems},{label:L('المسارات الصوتية','Audio tracks'),sub:audioItems},{label:L('الترجمة','Subtitles')+(S.sub?' ✓':''),sub:subMenu},{label:L('نسبة العرض: ','Aspect: ')+aspectName(),act:cycleAspect,keep:true}];
+const picName=()=>L(...PIC_N[S.settings.pic||'natural']);
+function picItems(){return PIC_K.map(k=>({label:L(...PIC_N[k]),on:(S.settings.pic||'natural')===k,act:()=>{S.settings.pic=k;saveSet();ENH.blocked=false;if(MOB&&window.NAT&&NAT.setPic)NAT.setPic({pic:picIdx()}).catch(()=>{});toast(L('🎨 وضع الصورة: ','🎨 Picture mode: ')+L(...PIC_N[k]),1500)}}))}
+const picItem=()=>({label:L('🎨 وضع الصورة: ','🎨 Picture mode: ')+picName(),sub:picItems});
+function liveMenu(){const ch=S.playing;const it=[enhItem(),picItem(),motionItem(),{label:L('الجودة','Quality'),sub:qualityItems},{label:L('المسارات الصوتية','Audio tracks'),sub:audioItems},{label:L('الترجمة','Subtitles')+(S.sub?' ✓':''),sub:subMenu},{label:L('نسبة العرض: ','Aspect: ')+aspectName(),act:cycleAspect,keep:true}];
   if(ch)it.push({label:S.favs.has(ch.key)?L('إزالة من المفضلة','Remove from favorites'):L('إضافة للمفضلة ★','Add to favorites ★'),act:()=>toggleFav(ch.key)});
   if(ch)it.push({label:isNT(ch.key)?L('👁 تسجيلها في آخر المشاهدة','👁 Track in Recently watched'):L('🚫 إزالتها من آخر المشاهدة وعدم تسجيلها','🚫 Remove from Recently watched & don\'t track'),act:()=>{if(isNT(ch.key)){S.noTrack.delete(ch.key)}else{S.noTrack.add(ch.key);S.recents=S.recents.filter(k=>k!==ch.key);store.set('recents',S.recents)}saveNT();toast(isNT(ch.key)?L('🚫 ما بتتسجل في آخر المشاهدة','🚫 Won\'t appear in Recently watched'):L('✓ بتتسجل في آخر المشاهدة','✓ Will appear in Recently watched'),1800)}});
   if(ch&&hasPin())it.push({label:isPriv(ch.key)?'🕵️ '+L('إزالة','Remove'):'🕵️ '+L('إضافة','Add'),act:()=>{exitPM();togglePriv(ch.key)}});
   const p=ch&&nowP(ch);if(ch&&ch.archive&&p&&!S.catchup)it.push({label:L('تشغيل البرنامج الحالي من البداية','Start current programme over'),act:()=>playCatchup(ch,p)});
   if(S.catchup)it.push({label:L('العودة للبث المباشر','Back to live'),act:()=>playChannel(S.catchup.ch,{pm:true})});
   it.push({label:L('دليل البرامج','TV guide'),act:()=>exitPM()});return it}
-function vodMenu(){return [enhItem(),motionItem(),{label:L('الجودة','Quality'),sub:qualityItems},{label:L('المسارات الصوتية','Audio tracks'),sub:audioItems},{label:L('الترجمة','Subtitles')+(S.sub?' ✓':''),sub:subMenu},{label:L('نسبة العرض: ','Aspect: ')+aspectName(),act:cycleAspect,keep:true},{label:L('سرعة التشغيل: ','Speed: ')+arN(V().playbackRate)+'×',act:cycleRate,keep:true}]}
+function vodMenu(){return [enhItem(),picItem(),motionItem(),{label:L('الجودة','Quality'),sub:qualityItems},{label:L('المسارات الصوتية','Audio tracks'),sub:audioItems},{label:L('الترجمة','Subtitles')+(S.sub?' ✓':''),sub:subMenu},{label:L('نسبة العرض: ','Aspect: ')+aspectName(),act:cycleAspect,keep:true},{label:L('سرعة التشغيل: ','Speed: ')+arN(V().playbackRate)+'×',act:cycleRate,keep:true}]}
 function sideLen(){const sd=S.side;return sd.type==='ch'?S.ch.length:sd.type==='grp'?sd.items.length:(sd.stack[sd.stack.length-1].items||[]).length}
 function renderSide(){const el=$('#side');const sd=S.side;if(!sd){el.classList.remove('open');el.innerHTML='';return}el.classList.add('open');
   if(sd.type==='ch'){if(!$('#slv')){el.innerHTML=`<div class="sh"><button class="cb sm" data-a="grp">☰ ${L('المجموعات','Groups')}</button><b>${esc(gLabel(S.tvGroup))}</b><em>${arN(S.ch.length)}</em></div><div class="sl" id="slv"><div id="sli" style="position:relative"></div></div>`;$('#slv').addEventListener('scroll',()=>requestAnimationFrame(drawSideList))}
@@ -1778,6 +1841,7 @@ function renderSetup(){const st=S.settings;const chip=(on,attr,txt)=>`<button cl
    <h4>🔊 ${L('لغة الصوت المفضلة','Preferred audio language')}</h4><div class="chips2">${chip(!st.audioLang,'data-su="audioLang:"',L('الأصلي','Original'))}${langs.slice(0,4).map(([v,a,e])=>chip(st.audioLang===v,`data-su="audioLang:${v}"`,L(a,e))).join('')}${chip(st.audioLang==='ja','data-su="audioLang:ja"',L('اليابانية','Japanese'))}</div>
    <div class="chips2" style="margin-top:8px">${chip(st.animeJa!==false,'data-su="tg:animeJa"',(st.animeJa!==false?'✓ ':'')+L('الأنمي: صوت ياباني + ترجمة عربية','Anime: Japanese audio + Arabic subtitles'))}</div>
    <h4>✨ ${L('تحسين الصورة','Picture enhancement')}</h4><div class="chips2">${[['auto',L('تلقائي (مستحسن)','Auto (recommended)')],['normal',L('عادي','Normal')],['strong',L('قوي','Strong')],['off',L('إيقاف','Off')]].map(([v,n])=>chip(st.enh===v,`data-su="enh:${v}"`,n)).join('')}</div>
+   <h4>🎨 ${L('وضع الصورة','Picture mode')}</h4><div class="chips2">${PIC_K.map(k=>chip((st.pic||'natural')===k,`data-su="pic:${k}"`,L(...PIC_N[k]))).join('')}</div>
    <div class="chips2" style="margin-top:8px">${[['enhLive',L('القنوات المباشرة','Live channels')],['enhMovies',L('الأفلام','Movies')],['enhSeries',L('المسلسلات','Series')]].map(([k,n])=>chip(st[k]!==false,`data-su="tg:${k}"`,(st[k]!==false?'✓ ':'')+n)).join('')}</div>
    <h4>🎬 ${L('القوائم','Lists')}</h4><div class="chips2">${chip(!!st.onlyAr,'data-su="tg:onlyAr"',(st.onlyAr?'✓ ':'')+L('اعرض العربي والمترجم بس','Show Arabic & subtitled only'))}</div>
    <div class="row3" style="display:flex;justify-content:flex-end;margin-top:20px"><button class="btn p" data-su="done">${L('حفظ وابدأ','Save & start')}</button></div></div>`}
@@ -1839,11 +1903,30 @@ function searchClick(e){const b=e.target.closest('[data-sc],[data-sp],[data-sm],
   else if(b.dataset.spp!=null){const p=R.ppl[+b.dataset.spp];openActor({id:p.id,name:p.name,photo:p.profile_path?IMG+'w185'+p.profile_path:''})}}
 
 /* ================= الإعدادات ================= */
-const SET_CATS=()=>[['pl',L('قوائم التشغيل','Playlists')],['epg',L('دليل البرامج','TV guide')],['play',L('التشغيل والجودة','Playback & quality')],['ui',L('اللغة والواجهة','Language & interface')],['groups',L('إدارة المجموعات','Manage groups')],['subs',L('الترجمة','Subtitles')],['tmdb',L('الممثلين و TMDB','Actors & TMDB')],['data',L('البيانات','Data')],['keys',L('الاختصارات','Shortcuts')]];
+const SET_CATS=()=>[
+  ['ui',L('التخصيص','Personalization'),'🎛',L('شاشة البداية، لغة الترجمة والصوت الافتراضية، نظام الوقت','Start tab, default subtitle & audio language, time format')],
+  ['groups',L('الرقابة الأبوية','Parental controls'),'🔒',L('إخفاء وقفل الأقسام برمز سري، المفضلة السرية','Hide & lock categories with a PIN, private favorites')],
+  ['play',L('إعدادات مشغّل الفيديو','Video Player Settings'),'▶️',L('الجودة، التحسين، وضع الصورة، تنعيم الحركة، نسبة العرض','Quality, enhancement, picture mode, motion, aspect')],
+  ['epg',L('دليل البرامج EPG','EPG'),'📺',L('مصدر الدليل، فرق التوقيت، إعادة التحميل','Guide source, time shift, reload')],
+  ['theme',L('المظهر','Theme'),'🎨',L('نيون، كلاسيكي، منتصف الليل','Neon, Classic, Midnight')],
+  ['subs',L('الترجمة','Subtitles'),'💬',L('الترجمة العربية الإجبارية، المصادر، الحجم واللون','Forced Arabic, sources, size & color')],
+  ['tmdb',L('الممثلين و TMDB','Actors & TMDB'),'🎬',L('صور وبيانات الممثلين','Cast photos & data')],
+  ['devices',L('متوفر على أجهزتك الثانية','Available on Other Devices'),'📱',L('ماك، سامسونق، آيفون','Mac, Samsung, iPhone')],
+  ['data',L('البيانات','Data'),'🗄',L('المفضلة، متابعة المشاهدة، التخزين المؤقت','Favorites, continue watching, cache')],
+  ['keys',L('الاختصارات','Shortcuts'),'⌨️',L('لوحة المفاتيح والريموت','Keyboard & remote')]];
+const THEMES=()=>[['neon',L('نيون','Neon'),L('أسود خالص مع لمسات نيون سماوي وبنفسجي','Pure black with cyan & violet neon accents')],['classic',L('كلاسيكي','Classic'),L('رمادي داكن هادئ','Calm dark grey')],['midnight',L('منتصف الليل','Midnight'),L('أزرق ليلي عميق','Deep night blue')]];
 const optSw=(k,t,s)=>`<div class="opt"><div class="f"><b>${t}</b>${s?`<small>${s}</small>`:''}</div><button class="sw ${S.settings[k]?'on':''}" data-tg="${k}"></button></div>`;
 const optBtn=(t,a,d)=>`<div class="opt"><div class="f"><b>${t}</b></div><button class="btn${d?' d':''}" data-act="${a}">${d?L('حذف','Delete'):L('مسح','Clear')}</button></div>`;
-function renderSettings(){S.setCat=S.setCat||'pl';$('#screen').innerHTML=`<div class="st"><div class="stn"><h2>${L('الإعدادات','Settings')}</h2>${SET_CATS().map(([k,n])=>`<button class="li${S.setCat===k?' foc':''}" data-sc2="${k}"><span>${n}</span></button>`).join('')}</div><div class="stc" id="stc">${setContent(S.setCat)}</div></div>`}
-function renderSettingsC(){const c=$('#stc');if(!c)return;const sc=c.scrollTop;c.innerHTML=setContent(S.setCat);c.scrollTop=sc}
+function renderSettings(){S.setCat=S.setCat||'home';const P=pl();
+  if(S.setCat==='home'){const exp=S.info&&+S.info.exp_date?new Date(S.info.exp_date*1000).toLocaleDateString(LOC(),{year:'numeric',month:'long',day:'numeric'}):null;const n=S.playlists.length;
+    $('#screen').innerHTML=`<div class="sth" id="stc"><h2>${L('القائمة','Menu')}</h2>
+    <div class="acard"><div class="acl"><div class="ak">${L('الحساب وقوائم التشغيل','ACCOUNT & PLAYLISTS')}</div><h3>${P?esc(P.name):L('أضف اشتراكك','Add your subscription')}</h3><p>${P?(P.type==='xtream'?esc(P.server||''):L('قائمة M3U','M3U playlist'))+(exp?` · ${L('ينتهي','expires')} ${exp}`:''):L('Xtream أو رابط M3U أو ملف — وتقدر تدمج أكثر من اشتراك في قوائم وحدة.','Xtream, an M3U link or a file — and you can merge several subscriptions into one.')}</p>${n>1?`<p class="sd">${arN(n)} ${L('اشتراكات','subscriptions')} ${mergeOn()?'· 🔗 '+L('مدموجة','merged'):''}</p>`:''}<button class="btn p" data-sc2="pl">${P?L('إدارة الاشتراكات','Manage sources'):'+ '+L('إضافة اشتراك','Add subscription')}</button></div>
+      <div class="acr"><button class="atile" data-sc2="pl"><span class="ai">🗂</span><b>${L('إدارة المصادر','Manage sources and…')}</b><small>${L('إضافة، تعديل، تبديل، دمج','Add, remove, or switch sources')}</small></button><button class="atile" data-pa="reload|"><span class="ai">↻</span><b>${L('تحديث القوائم','Reload playlists')}</b><small>${arN(S.live.length)} ${L('قناة','channels')} · ${arN(S.movies.length)} ${L('فيلم','movies')} · ${arN(S.series.length)} ${L('مسلسل','series')}</small></button></div></div>
+    <div class="smenu"><div class="smh">${L('الإعدادات','Settings')}</div>${SET_CATS().map(([k,n,ic,d])=>`<button class="srow" data-sc2="${k}"><span class="si">${ic}</span><span class="st2"><b>${n}</b><small>${d}</small></span><span class="chev">${RTL()?'‹':'›'}</span></button>`).join('')}</div>
+    <p class="sd" style="text-align:center;margin-top:26px;opacity:.6">Sanad Player ${typeof APP_VER!=='undefined'?APP_VER:''}</p></div>`;return}
+  const cat=SET_CATS().find(x=>x[0]===S.setCat)||[S.setCat,L('الإعدادات','Settings'),''];
+  $('#screen').innerHTML=`<div class="stp"><div class="stph"><button class="btn" data-sc2="home">${RTL()?'›':'‹'} ${L('القائمة','Menu')}</button><h2>${cat[2]||''} ${cat[1]}</h2></div><div class="stc" id="stc">${setContent(S.setCat)}</div></div>`}
+function renderSettingsC(){if((S.setCat||'home')==='home'){renderSettings();return}const c=$('#stc');if(!c)return;const sc=c.scrollTop;c.innerHTML=setContent(S.setCat);c.scrollTop=sc}
 function setContent(c){const P=pl();
   if(c==='pl'){const exp=S.info&&+S.info.exp_date?new Date(S.info.exp_date*1000).toLocaleDateString(LOC(),{year:'numeric',month:'long',day:'numeric'}):null;
     return `<h3>${L('قوائم التشغيل','Playlists')}</h3><p class="sd">${L('تقدر تضيف أكثر من اشتراك وتتنقل بينها.','You can add several subscriptions and switch between them.')}</p>
@@ -1857,6 +1940,7 @@ function setContent(c){const P=pl();
     <div class="opt"><div class="f"><b>${L('تعديل وقت الدليل','Guide time shift')}</b><small>${L('إذا أوقات البرامج متقدمة أو متأخرة عن الواقع','If programme times are ahead of or behind real time')}</small></div><select class="in" data-sel="epgShift">${range(-12,12).map(h=>`<option value="${h}" ${+S.settings.epgShift===h?'selected':''}>${h>0?'+':''}${arN(h)} ${L('ساعة','h')}</option>`).join('')}</select></div>`}
   if(c==='play')return `<h3>${L('التشغيل والجودة','Playback & quality')}</h3>
     <div class="opt"><div class="f"><b>✨ ${L('تحسين الصورة ورفع الدقة','Picture enhancement & upscaling')}</b><small>${L('يرفع دقة الصورة لحد دقة شاشتك (حتى 4K) بفلتر ذكي على كرت الشاشة، ويزيد الحدة والوضوح والألوان. التفاصيل اللي مو موجودة في المصدر ما يقدر أي برنامج يخترعها، بس الفرق واضح في الأفلام والقنوات منخفضة الجودة.','Upscales the picture to your screen\'s resolution (up to 4K) with a GPU filter, and boosts sharpness, clarity and color. No app can invent detail that isn\'t in the source, but the difference is clear on lower-quality movies and channels.')}</small></div><select class="in" data-sel="enh">${Object.entries(ENH_NAMES()).map(([v,n])=>`<option value="${v}" ${S.settings.enh===v?'selected':''}>${n}</option>`).join('')}</select></div>
+    <div class="opt"><div class="f"><b>🎨 ${L('وضع الصورة','Picture mode')}</b><small>${L('مثل أوضاع التلفزيون: «زاهي» ألوان قوية وتباين عالي، «سينمائي» ألوان دافئة هادئة بإحساس السينما، «رياضة» حدة وحركة واضحة، «أنمي» ألوان مشبعة نظيفة، «ليلي» صورة أهدأ للعين بالظلام.','Like TV presets: “Vivid” punchy colors and contrast, “Cinematic” warm calm film look, “Sport” crisp detail, “Anime” clean saturated colors, “Night” easier on the eyes in the dark.')}</small></div><select class="in" data-sel="pic">${PIC_K.map(k=>`<option value="${k}" ${(S.settings.pic||'natural')===k?'selected':''}>${L(...PIC_N[k])}</option>`).join('')}</select></div>
     <div class="opt"><div class="f"><b>🎞 ${L('تنعيم الحركة (إطارات وسيطة)','Motion smoothing (frame interpolation)')}</b><small>${L('الأفلام مسجلة بـ ٢٤ إطار في الثانية، وشاشتك تعرض ٦٠ أو ١٢٠ هرتز. هذا الخيار يولّد إطارات وسيطة بين إطارات الفيلم على كرت الشاشة عشان الحركة تصير أنعم وتملأ تردد الشاشة. «خفيف» أنعم من الأصل بدون أثر واضح، و«كامل» حركة سلسة جداً بس ممكن يطلع ظل خفيف في المشاهد السريعة.','Movies are 24 fps while your display runs at 60 or 120 Hz. This generates intermediate frames on the GPU so motion looks smoother and fills the display rate. “Light” is subtle; “Full” is very fluid but may ghost slightly in fast scenes.')}${ENH.hz?' '+L('شاشتك الحين: ','Your display now: ')+arN(ENH.hz)+' '+L('هرتز','Hz'):''}</small></div><select class="in" data-sel="motion">${Object.entries(MOTION_NAMES()).map(([v,n])=>`<option value="${v}" ${(S.settings.motion||'off')===v?'selected':''}>${n}</option>`).join('')}</select></div>
     <div class="opt"><div class="f"><b>🔊 ${L('لغة الصوت المفضلة','Preferred audio language')}</b><small>${L('إذا الفيلم فيه أكثر من مسار صوت، يختار هذي اللغة تلقائياً. مجموعات الأنمي دايماً تشتغل بالصوت الياباني مع ترجمة عربية (تقدر تحدد مجموعات الأنمي من «المجموعات»).','When a title has several audio tracks, this one is chosen automatically. Anime groups always play Japanese audio with Arabic subtitles (set anime groups under “Groups”).')}</small></div><select class="in" data-sel="audioLang"><option value="" ${!S.settings.audioLang?'selected':''}>${L('الأصلي (ما يغيّر)','Original (no change)')}</option>${[['ar','العربية','Arabic'],['en','الإنجليزية','English'],['ja','اليابانية','Japanese'],['tr','التركية','Turkish'],['fr','الفرنسية','French'],['hi','الهندية','Hindi'],['ko','الكورية','Korean']].map(([v,a,e])=>`<option value="${v}" ${S.settings.audioLang===v?'selected':''}>${L(a,e)}</option>`).join('')}</select></div>
     <div class="opt"><div class="f"><b>⚙️ ${L('الإعدادات الأولية','Initial setup')}</b><small>${L('لغة الترجمة والصوت وتحسين الصورة بخطوة وحدة','Subtitle & audio language and picture enhancement in one step')}</small></div><button class="btn" data-act="setup">${L('فتح','Open')}</button></div>
@@ -1868,7 +1952,23 @@ function setContent(c){const P=pl();
     ${optSw('autoplay',L('تشغيل آخر قناة عند فتح البرنامج','Play the last channel on start'),L('يكمل من آخر قناة كنت تشوفها','Continues from the channel you were watching'))}${optSw('autoFs',L('ملء الشاشة تلقائياً','Fullscreen automatically'),L('يدخل ملء الشاشة عند فتح قناة أو فيلم','Goes fullscreen when you open a channel or movie'))}
     <div class="opt"><div class="f"><b>${L('صيغة البث المباشر (إكستريم)','Live stream format (Xtream)')}</b><small>${L('إذا القنوات ما تشتغل جرّب الصيغة الثانية','If channels won\'t play, try the other format')}</small></div><select class="in" data-sel="fmt"><option value="m3u8" ${S.settings.fmt==='m3u8'?'selected':''}>HLS (m3u8)</option><option value="ts" ${S.settings.fmt==='ts'?'selected':''}>MPEG-TS (ts)</option></select></div>
     <div class="opt"><div class="f"><b>${L('نسبة العرض','Aspect ratio')}</b></div><select class="in" data-sel="aspect">${ASP().map(([v,n])=>`<option value="${v}" ${S.settings.aspect===v?'selected':''}>${n}</option>`).join('')}</select></div>`;
-  if(c==='ui')return `<h3>${L('اللغة والواجهة','Language & interface')}</h3>
+  if(c==='theme')return `<p class="sd">${L('اختر شكل التطبيق. «نيون» هو الشكل الافتراضي الجديد.','Pick the look of the app. “Neon” is the new default.')}</p><div class="thm">${THEMES().map(([k,n,d])=>`<button class="${(S.settings.theme||'neon')===k?'on':''}" data-theme-pick="${k}"><div class="sw2 ${k}"></div><b>${n}</b><small>${d}</small></button>`).join('')}</div>`;
+  if(c==='devices')return `<p class="sd">${L('سند بلاير متوفر على كل أجهزتك، وبنفس الاشتراك.','Sanad Player runs on all your devices with the same subscription.')}</p>
+    <div class="opt"><div class="f"><b>💻 ${L('ماك','Mac')}</b><small>${L('النسخة الكاملة: تحسين الصورة بالذكاء الاصطناعي، ترجمة من الكلام، تنزيلات.','Full version: AI enhancement, speech-to-subtitles, downloads.')}</small></div>${isApp()?`<span class="tag">${L('هذا الجهاز','This device')}</span>`:''}</div>
+    <div class="opt"><div class="f"><b>📱 ${L('أندرويد / سامسونق','Android / Samsung')}</b><small>${L('ملف APK — تحسين الصورة على الجهاز، ترجمة عربية آلية بدون نت بعد أول مرة.','APK — on-device enhancement, offline Arabic machine translation after first run.')}</small></div>${MOB&&(window.CAP&&CAP.getPlatform?CAP.getPlatform():'')==='android'?`<span class="tag">${L('هذا الجهاز','This device')}</span>`:''}</div>
+    <div class="opt"><div class="f"><b>📱 ${L('آيفون / آيباد','iPhone / iPad')}</b><small>${L('عبر TestFlight ثم App Store.','Via TestFlight, then the App Store.')}</small></div>${MOB&&(window.CAP&&CAP.getPlatform?CAP.getPlatform():'')==='ios'?`<span class="tag">${L('هذا الجهاز','This device')}</span>`:''}</div>
+    <p class="sd" style="margin-top:14px">${L('الإعدادات والمفضلة محفوظة في كل جهاز على حدة.','Settings and favorites are stored per device.')}</p>`;
+  if(c==='ui'){const langs=[['ar','العربية','Arabic'],['en','الإنجليزية','English'],['fr','الفرنسية','French'],['tr','التركية','Turkish'],['es','الإسبانية','Spanish'],['hi','الهندية','Hindi']];const sel=(k,opts,cur)=>`<select class="in" data-sel="${k}">${opts.map(([v,n])=>`<option value="${v}" ${cur===v?'selected':''}>${n}</option>`).join('')}</select>`;
+    return `<h3>${L('عام','General')}</h3>
+    <div class="opt"><div class="f"><b>${L('شاشة البداية','Start on tab')}</b><small>${L('الشاشة اللي يفتح عليها التطبيق','The tab the app opens on')}</small></div>${sel('startTab',[['tv',L('التلفزيون','TV Live')],['movies',L('الأفلام','Movies')],['series',L('المسلسلات','Series')]],S.settings.startTab||'tv')}</div>
+    <div class="opt"><div class="f"><b>${L('لغة الترجمة الافتراضية','Default subtitles language')}</b></div>${sel('subLang',langs.map(([v,a,e])=>[v,L(a,e)]),S.settings.subLang||'ar')}</div>
+    <div class="opt"><div class="f"><b>${L('لغة الصوت الافتراضية','Default audio language')}</b></div>${sel('audioLang',[['',L('الأصلي','Original')]].concat(langs.map(([v,a,e])=>[v,L(a,e)])),S.settings.audioLang||'')}</div>
+    <div class="opt"><div class="f"><b>${L('اللغة','Language')} / Language</b></div><div class="tabs2" style="margin:0"><button class="${LANG==='ar'?'on':''}" data-lang="ar">العربية</button><button class="${LANG==='en'?'on':''}" data-lang="en">English</button></div></div>
+    ${optSw('clock24',L('نظام ٢٤ ساعة','24-hour clock'),L('عرض الوقت مثل ٢١:٠٠ بدل ٩:٠٠ م','Show 21:00 instead of 9:00 PM'))}
+    <h3 class="mt">${L('التلفزيون','TV Live')}</h3>
+    ${optSw('autoplay',L('تشغيل آخر قناة تلقائياً','Autoplay last channel'),L('عند فتح التطبيق','When the app opens'))}
+    ${optSw('autoFs',L('بدء المشغّل بملء الشاشة','Start player in fullscreen'),'')}`}
+  if(c==='__ui_old')return `<h3>${L('اللغة والواجهة','Language & interface')}</h3>
     <div class="opt"><div class="f"><b>${L('اللغة','Language')} / Language</b></div><div class="tabs2" style="margin:0"><button class="${LANG==='ar'?'on':''}" data-lang="ar">العربية</button><button class="${LANG==='en'?'on':''}" data-lang="en">English</button></div></div>
     ${optSw('clock24',L('نظام ٢٤ ساعة','24-hour clock'),L('عرض الوقت مثل ٢١:٠٠ بدل ٩:٠٠ م','Show 21:00 instead of 9:00 PM'))}`;
   if(c==='groups'){const k=S.hgTab||'live';const arr=k==='live'?S.live:k==='movies'?S.movies:S.series;const hid=hiddenSet(k);const gs=orderGroups(k,groupsOf(arr));
@@ -1918,10 +2018,11 @@ function setContent(c){const P=pl();
     <h4>${L('الأفلام والمسلسلات','Movies & series')}</h4>${K(L('الأسهم','Arrows'),L('التنقل بين البوسترات','Move between posters'))}${K(L('مسافة','Space'),L('إيقاف مؤقت / تشغيل','Pause / play'))}${K('← →',L('ترجيع وتقديم ١٠ ثواني','Back / forward 10 seconds'))}${K('N',L('الحلقة التالية','Next episode'))}</div>`}
   return ''}
 function toggleHidden(kind,g,force){const h=S.hidden[S.active]||(S.hidden[S.active]={});const a=new Set(h[kind]||[]);if(force===true)a.add(g);else if(force===false)a.delete(g);else a.has(g)?a.delete(g):a.add(g);h[kind]=[...a];store.set('hidden',S.hidden);if(kind==='live')S.ch=filterLive()}
-function settingsClick(e){const t=e.target.closest('[data-sc2],[data-pa],[data-tg],[data-act],[data-hg],[data-hgt],[data-lang],[data-gk],[data-ga]');if(!t)return;
+function settingsClick(e){const t=e.target.closest('[data-sc2],[data-theme-pick],[data-pa],[data-tg],[data-act],[data-hg],[data-hgt],[data-lang],[data-gk],[data-ga]');if(!t)return;
   if(t.dataset.gk!==undefined){if(toggleLock(S.hgTab||'live',t.dataset.gk))renderSettingsC();return}if(t.dataset.ga!==undefined){setAnime(S.hgTab||'live',t.dataset.ga);renderSettingsC();return}
   if(t.dataset.lang){setLang(t.dataset.lang);return}
   if(t.dataset.sc2){S.setCat=t.dataset.sc2;renderSettings();return}
+  if(t.dataset.themePick){S.settings.theme=t.dataset.themePick;saveSet();applyTheme();renderSettingsC();return}
   if(t.dataset.pa){const [a,id]=t.dataset.pa.split('|');if(a==='add')openAdd();else if(a==='edit')openAdd(id);else if(a==='act')activate(id);else if(a==='reload'){S.screen='tv';loadActive()}else if(a==='del')delPl(id);return}
   if(t.dataset.tg){const k=t.dataset.tg;S.settings[k]=!S.settings[k];saveSet();renderSettingsC();if(k==='merge'){toast(S.settings.merge?L('جاري دمج الاشتراكات…','Merging subscriptions…'):L('رجعنا للاشتراك النشط بس','Back to the active subscription only'));loadActive()}return}
   if(t.dataset.hgt){S.hgTab=t.dataset.hgt;renderSettingsC();return}
@@ -2092,7 +2193,7 @@ if(MOB){(function(){
   const saveEnh=i=>{if(i==null||i===1&&S.settings.enh!=='off')return;const k=ENHK[i]||'auto';if(S.settings.enh!==k){S.settings.enh=k;saveSet()}};
   const yearOf=o=>{const t=[o&&o.subItem&&(o.subItem.year||o.subItem.name),o&&o.title].filter(Boolean).join(' ');const m=String(t).match(/\b(19[2-9]\d|20[0-4]\d)\b/);return m?+m[1]:0};
   let playing=false;
-  async function nativePlay(opts){if(playing)return null;playing=true;try{return await NAT.play(Object.assign({enh:enhIdx(),prefSub:S.settings.subLang||'ar',subScale:[1,1.1,1.25,1.45,1.7][S.settings.subSize]||1.25},opts))}catch(e){toast(L('تعذّر فتح المشغّل: ','Could not open the player: ')+(e&&e.message||e),4000);return null}finally{playing=false}}
+  async function nativePlay(opts){if(playing)return null;playing=true;try{return await NAT.play(Object.assign({enh:enhIdx(),pic:picIdx(),prefSub:S.settings.subLang||'ar',subScale:[1,1.1,1.25,1.45,1.7][S.settings.subSize]||1.25},opts))}catch(e){toast(L('تعذّر فتح المشغّل: ','Could not open the player: ')+(e&&e.message||e),4000);return null}finally{playing=false}}
   // ---- live TV: always fullscreen native player with zapping list ----
   const origPlayChannel=playChannel;
   playChannel=function(ch,o={}){if(!ch)return;if(!userGesture()){S.playing=ch;return}

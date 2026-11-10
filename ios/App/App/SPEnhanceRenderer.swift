@@ -10,6 +10,8 @@ import AVFoundation
 final class SPEnhanceRenderer: NSObject, MTKViewDelegate {
     final class Params {
         var mode = 0            // 0 auto, 1 off, 2 normal, 3 strong
+        var pic = 0             // 0 natural, 1 vivid, 2 cinematic, 3 sport, 4 anime, 5 night
+        var picOn: Bool { pic != 0 }
         var compare = false
         var year = 0
         var fill = 0            // 0 fit, 1 fill, 2 zoom
@@ -38,7 +40,7 @@ final class SPEnhanceRenderer: NSObject, MTKViewDelegate {
         float2 t[4] = { float2(0.0, 1.0), float2(1.0, 1.0), float2(0.0, 0.0), float2(1.0, 0.0) };
         VOut o; o.pos = float4(p[vid], 0.0, 1.0); o.uv = t[vid]; return o;
     }
-    struct U { float2 inSize; float2 outSize; float4 a; float4 b; };
+    struct U { float2 inSize; float2 outSize; float4 a; float4 b; float4 c; };
     static float3 T(texture2d<float> tex, sampler s, float2 u) { return tex.sample(s, u).rgb; }
     static float3 catmull(texture2d<float> tex, sampler s, float2 uv, float2 inSize) {
         float2 sp = uv * inSize; float2 t1 = floor(sp - 0.5) + 0.5; float2 f = sp - t1;
@@ -83,6 +85,10 @@ final class SPEnhanceRenderer: NSObject, MTKViewDelegate {
         res = pow(res, float3(u.b.z));
         float l = dot(res, float3(0.299, 0.587, 0.114));
         res = clamp(mix(float3(l), res, u.a.z), 0.0, 1.0);
+        // picture mode: contrast, gamma, warmth (c.x con, c.y gamma, c.z warm)
+        res = clamp((res - 0.5) * u.c.x + 0.5, 0.0, 1.0);
+        res = pow(res, float3(u.c.y));
+        res = clamp(res + float3(u.c.z, u.c.z * 0.25, -u.c.z), 0.0, 1.0);
         return float4(res, 1.0);
     }
     """
@@ -194,6 +200,17 @@ final class SPEnhanceRenderer: NSObject, MTKViewDelegate {
         }
     }
 
+    struct PicPreset { var sat: Float; var con: Float; var gamma: Float; var warm: Float; var sharp: Float }
+    static func picPreset(_ i: Int) -> PicPreset {
+        switch i {
+        case 1: return PicPreset(sat: 1.22, con: 1.08, gamma: 0.96, warm: 0.012, sharp: 0.05)   // vivid
+        case 2: return PicPreset(sat: 0.94, con: 1.06, gamma: 1.06, warm: 0.035, sharp: -0.1)   // cinematic
+        case 3: return PicPreset(sat: 1.10, con: 1.05, gamma: 1.0, warm: 0, sharp: 0.2)         // sport
+        case 4: return PicPreset(sat: 1.16, con: 1.04, gamma: 0.98, warm: 0, sharp: 0.15)       // anime
+        case 5: return PicPreset(sat: 0.92, con: 0.97, gamma: 1.12, warm: 0.02, sharp: -0.05)   // night
+        default: return PicPreset(sat: 1, con: 1, gamma: 1, warm: 0, sharp: 0)
+        }
+    }
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
 
     func draw(in view: MTKView) {
@@ -203,8 +220,10 @@ final class SPEnhanceRenderer: NSObject, MTKViewDelegate {
         first = false
         p.denoise += (tDen - p.denoise) * a; p.sharp += (tSharp - p.sharp) * a; p.sat += (tSat - p.sat) * a
         p.lo += (tLo - p.lo) * a; p.hi += (tHi - p.hi) * a; p.gamma += (tGamma - p.gamma) * a
-        let on = p.mode != 1
-        var u: [Float] = [Float(p.inW), Float(p.inH), 0, 0, p.denoise, p.sharp, p.sat, on ? 1 : 0, p.lo, p.hi, p.gamma, (p.compare && on) ? 0.5 : -1]
+        let on = p.mode != 1 || p.picOn
+        let pm = SPEnhanceRenderer.picPreset(p.pic)
+        let plain = p.mode == 1   // enhancement off: picture mode only, no denoise / sharpen / auto levels
+        var u: [Float] = [Float(p.inW), Float(p.inH), 0, 0, plain ? 0 : p.denoise, max(0, (plain ? 0 : p.sharp) + pm.sharp), (plain ? 1 : p.sat) * pm.sat, on ? 1 : 0, plain ? 0 : p.lo, plain ? 1 : p.hi, plain ? 1 : p.gamma, (p.compare && on) ? 0.5 : -1, pm.con, pm.gamma, pm.warm, 0]
         let fill = p.fill
         lock.unlock()
         guard let drawable = view.currentDrawable, let rpd = view.currentRenderPassDescriptor, let cb = queue.makeCommandBuffer() else { return }

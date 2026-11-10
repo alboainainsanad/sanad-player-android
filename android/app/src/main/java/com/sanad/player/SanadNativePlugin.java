@@ -81,6 +81,14 @@ public class SanadNativePlugin extends Plugin {
   }
 
   @PluginMethod
+  public void setPic(PluginCall call) {
+    PlayerActivity a = PlayerActivity.current;
+    int pic = call.getInt("pic", 0);
+    if (a != null) a.ep.pic = pic;
+    call.resolve();
+  }
+
+  @PluginMethod
   public void useMt(PluginCall call) {
     PlayerActivity a = PlayerActivity.current;
     if (a != null) a.runOnUiThread(a::useMt);
