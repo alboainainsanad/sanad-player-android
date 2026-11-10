@@ -12,6 +12,12 @@
 <style>
 :root{--bg:#0a0c0f;--p1:#101317;--p2:#161a20;--p3:#1f242c;--p4:#2a3039;--ln:#232931;--tx:#eef1f5;--mu:#8b95a3;--mu2:#5c6674;--ac:#4a90ff;--foc:#e8ecf1;--gold:#f5c518;--red:#ff4d4d;--ok:#3ccf7a;--CHW:280px;--rail:68px}
 
+/* hidden-items vault */
+.hidbar{margin:6px 12px 2px;padding:14px 16px;border:1px dashed var(--ln);border-radius:16px;background:var(--p1);display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.hidbar .hbt{display:flex;gap:12px;align-items:center;flex:1;min-width:260px}.hidbar .hbi{width:44px;height:44px;border-radius:12px;background:var(--p3);display:grid;place-items:center;font-size:22px}.hidbar b{display:block;font-size:15px}.hidbar small{color:var(--mu);font-size:12.5px}
+.hidbar .hbl{display:flex;flex-wrap:wrap;gap:8px;flex:2}.hchip{display:inline-flex;align-items:center;gap:8px;background:var(--p3);border:1px solid var(--ln);border-radius:20px;padding:6px 8px 6px 12px;font-size:13.5px}.hchip button{width:22px;height:22px;border-radius:50%;background:#ffffff14;font-size:12px}.hchip button:hover{background:var(--red);color:#fff}
+.hidbar .hba .in{width:auto;min-width:220px}
+html[data-theme=neon] .hidbar{border-color:#ff2bd655;background:#0a070c;box-shadow:inset 0 0 30px #ff2bd60d}html[data-theme=neon] .hidbar .hbi{background:#17101a;box-shadow:0 0 14px #ff2bd644}
 /* ===== Settings menu (IPTV Expert style) ===== */
 .sth{height:100%;overflow:auto;padding:30px 48px 80px;max-width:1100px;margin:0 auto}
 .acard{display:flex;gap:18px;background:linear-gradient(135deg,var(--p2),var(--p1));border:1px solid var(--ln);border-radius:22px;padding:26px;margin-top:8px;align-items:stretch}
@@ -111,7 +117,11 @@ a{color:var(--ac)}
 body.pm #rail{display:none}
 #screen{position:fixed;top:0;bottom:0;inset-inline-start:var(--rail);inset-inline-end:0;overflow:hidden}
 /* lists */
-.li{display:flex;align-items:center;gap:10px;width:100%;text-align:start;padding:11px 14px;border-radius:10px;font-size:15px;color:#d5dbe3;cursor:pointer}
+.li{display:flex;align-items:center;gap:10px;width:100%;text-align:start;padding:12px 14px;border-radius:12px;font-size:15px;color:#d5dbe3;cursor:pointer;transition:background .14s ease,color .14s ease,transform .14s ease,box-shadow .14s ease;will-change:transform}
+.li:active{transform:scale(.985)}
+.vgl{scroll-behavior:smooth;overscroll-behavior:contain}
+html[data-theme=neon] .li.foc{background:linear-gradient(90deg,#00e5ff,#39c7ff);color:#000;box-shadow:0 0 16px #00e5ff55}
+html[data-theme=neon] .li:hover:not(.foc){background:#101119;color:#fff;box-shadow:inset 3px 0 0 #00e5ff}
 .li span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .li:hover{background:var(--p3)}
 .li.foc{background:var(--foc);color:#0a0c0f}
@@ -227,6 +237,7 @@ body.pm #stage.ui.lv #liveBar,body.pm #stage.ui.vd #vodBar{display:block}
 #topBar{position:absolute;top:0;right:0;left:0;padding:20px 26px 40px;background:linear-gradient(#000d,transparent);z-index:4;align-items:center;gap:10px}
 #topBar .tt{font-weight:800;font-size:18px;text-shadow:0 0 8px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .qb{font-size:12.5px;background:#ffffff1c;padding:4px 10px;border-radius:20px;white-space:nowrap;color:#dfe5ec}.qb.on{background:linear-gradient(90deg,#1a63ff55,#8a5cff55);color:#fff}
+.qb.res{font-weight:800;letter-spacing:.3px}.qb.hdr{background:linear-gradient(90deg,#ff6a00,#ffd000 50%,#00d4ff);color:#000;font-weight:900;box-shadow:0 0 14px #ffd00066}.qb.pic{font-weight:800;border:1px solid #ffffff33}.qb.pic i{font-style:normal;opacity:.7;font-weight:500}.qb.pic.vivid{background:linear-gradient(90deg,#ff2bd6aa,#ff8a00aa);color:#fff;box-shadow:0 0 12px #ff2bd655}.qb.pic.cinematic{background:linear-gradient(90deg,#1b1b2faa,#5a3d1baa);color:#ffd9a8;border-color:#ffb86b55}.qb.pic.sport{background:#1dd37555;color:#c8ffe0}.qb.pic.anime{background:#7a5cff66;color:#eae3ff}.qb.pic.night{background:#102033;color:#9fc6ff}
 .cb{height:42px;min-width:42px;padding:0 15px;border-radius:21px;background:#ffffff1c;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:14px;white-space:nowrap}
 .cb:hover{background:#ffffff36}.cb.p{background:#fff;color:#000}.cb.sm{height:34px;padding:0 12px;font-size:13px}
 #liveBar{position:absolute;bottom:0;left:0;right:0;padding:50px 38px 22px;background:linear-gradient(transparent,#000e 40%);z-index:3}
@@ -276,7 +287,7 @@ body.pm #stage.ui.lv #liveBar,body.pm #stage.ui.vd #vodBar{display:block}
 .vhinfo p{color:#bfc7d1;font-size:14.5px;line-height:1.75;margin-top:10px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .chips{display:flex;flex-wrap:wrap;gap:6px 12px;color:#c9d0d9;font-size:15px;margin-top:10px;align-items:center}
 .rate{color:var(--gold);font-weight:800}
-.vmain{flex:1;display:flex;min-height:0}
+.vmain{flex:1;display:flex;min-height:0}.vcol{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
 .vgroups{width:270px;flex-shrink:0;display:flex;flex-direction:column;border-inline-end:1px solid var(--ln);padding:4px 10px 10px}
 .vsrch input,.sbox input{width:100%;background:var(--p2);border:1px solid var(--ln);border-radius:10px;padding:10px 13px;outline:0;margin:4px 0 10px}
 .vsrch input:focus,.sbox input:focus{border-color:var(--ac)}
@@ -451,7 +462,7 @@ const idb={db:null,
 };
 const S={
   playlists:store.get('playlists',[]),active:store.get('active',null),
-  settings:Object.assign({fmt:'m3u8',tmdb:'',epgShift:0,clock24:false,autoplay:true,autoFs:true,aspect:'contain',enh:'auto',pic:'natural',theme:'neon',motion:'light',audioLang:'',maxq:true,subAuto:true,subLang:'ar',subSize:'m',subBg:false,subColor:'#ffffff',subdl:'',osKey:'',merge:false,pin:'',autoProbe:true,forceAr:true,mtEngine:'auto',speechSubs:true,animeJa:true,enhLive:true,enhMovies:true,enhSeries:true,setupDone:false,vf:{}},store.get('settings',{})),
+  settings:Object.assign({fmt:'m3u8',tmdb:'',epgShift:0,clock24:false,autoplay:true,autoFs:true,aspect:'contain',enh:'auto',pic:'auto',theme:'neon',motion:'light',audioLang:'',maxq:true,subAuto:true,subLang:'ar',subSize:'m',subBg:false,subColor:'#ffffff',subdl:'',osKey:'',merge:false,pin:'',autoProbe:true,forceAr:true,mtEngine:'auto',speechSubs:true,animeJa:true,enhLive:true,enhMovies:true,enhSeries:true,setupDone:false,vf:{}},store.get('settings',{})),
   favs:new Set(store.get('favs',[])),pfavs:new Set(store.get('pfavs',[])),unlocked:false,tracks:store.get('tracks',{}),anime:store.get('anime',{}),locks:store.get('locks',{}),noTrack:new Set(store.get('noTrack',[])),dls:store.get('dls',[]),recents:store.get('recents',[]),resume:store.get('resume',{}),hidden:store.get('hidden',{}),
   live:[],movies:[],series:[],epg:{},epgNames:{},info:null,serverTz:null,gOrder:null,meta:{},idx:null,qsel:{},subsFound:{},
   screen:'tv',cur:null,stack:[],
@@ -490,7 +501,9 @@ const NOCAT=()=>L('بدون تصنيف','Uncategorized');
 
 /* subtitle pipeline talks quietly: status lives in the 💬 menu, never as a failure banner over the film */
 function subNote(m){S.subNote=m;console.info('subs:',m);if(S.pm||S.vod)try{renderBars()}catch(e){}}
-let tT;function toast(m,ms=3500,act){const t=$('#toast');t.textContent=m;t.onclick=act?()=>{t.classList.remove('show');act()}:null;t.style.cursor=act?'pointer':'';t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),ms)}
+/* during playback only a toast that answers something the viewer just did may appear; automatic chatter stays silent */
+document.addEventListener('pointerdown',()=>{S.uact=Date.now()},true);document.addEventListener('keydown',()=>{S.uact=Date.now()},true);
+let tT;function toast(m,ms=3500,act){if((S.pm||S.vod)&&!act&&Date.now()-(S.uact||0)>2500){console.info('toast(silent):',m);return}const t=$('#toast');t.textContent=m;t.onclick=act?()=>{t.classList.remove('show');act()}:null;t.style.cursor=act?'pointer':'';t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),ms)}
 const fmtT=t=>new Date(t).toLocaleTimeString(LOC(),{hour:'numeric',minute:'2-digit',hourCycle:S.settings.clock24?'h23':'h12'});
 function dayDiff(t){const a=new Date(t),b=new Date();return Math.round((new Date(a.getFullYear(),a.getMonth(),a.getDate())-new Date(b.getFullYear(),b.getMonth(),b.getDate()))/864e5)}
 function dayName(t){const k=dayDiff(t);return k===0?L('اليوم','Today'):k===1?L('غداً','Tomorrow'):k===-1?L('أمس','Yesterday'):new Date(t).toLocaleDateString(LOC(),{weekday:'long'})}
@@ -737,9 +750,16 @@ const srcRes=()=>{const v=V();return v.videoWidth?`${arN(v.videoWidth)}×${arN(v
 const ENH_LV={off:null,auto:'auto',normal:{sharp:.45,sat:1.04,con:1.03},strong:{sharp:.9,sat:1.1,con:1.06}};
 /* picture modes — like a TV's "Vivid / Cinema" presets, layered on top of the enhancer */
 const PIC={natural:{sat:1,con:1,gam:1,warm:0,sharp:0},vivid:{sat:1.22,con:1.08,gam:.96,warm:.012,sharp:.05},cinematic:{sat:.94,con:1.06,gam:1.06,warm:.035,sharp:-.1},sport:{sat:1.1,con:1.05,gam:1,warm:0,sharp:.2},anime:{sat:1.16,con:1.04,gam:.98,warm:0,sharp:.15},night:{sat:.92,con:.97,gam:1.12,warm:.02,sharp:-.05}};
-const PIC_N={natural:['طبيعي','Natural'],vivid:['زاهي Vivid','Vivid'],cinematic:['سينمائي Cinematic','Cinematic'],sport:['رياضة','Sport'],anime:['أنمي','Anime'],night:['ليلي','Night']};
-const PIC_K=Object.keys(PIC);const picIdx=()=>Math.max(0,PIC_K.indexOf(S.settings.pic||'natural'));
-function picOf(){return PIC[S.settings.pic]||PIC.natural}
+const PIC_N={auto:['تلقائي حسب المحتوى','Auto (by content)'],natural:['طبيعي','Natural'],vivid:['زاهي Vivid','Vivid'],cinematic:['سينمائي Cinematic','Cinematic'],sport:['رياضة','Sport'],anime:['أنمي','Anime'],night:['ليلي','Night']};
+const PIC_K=['auto'].concat(Object.keys(PIC));
+/* auto: what a good TV would pick for this content */
+function picAuto(){const o=S.vod;if(o){const it=o.subItem||o.it||{};const g=String((it.group||'')+' '+(o.title||'')+' '+(it.name||'')).toLowerCase();let gen=new Set();try{if(it.key)gen=genresOf(it)}catch(e){}
+    if(gen.has('anime')||/anime|أنمي|انمي|cartoon|كرتون|kids|اطفال|أطفال/.test(g))return 'anime';if(/sport|رياض|bein|football|كرة/.test(g))return 'sport';return 'cinematic'}
+  const ch=S.playing;if(ch){const g=String((ch.group||'')+' '+(ch.name||'')).toLowerCase();if(/sport|رياض|bein|ssc|football|كرة|nba|f1/.test(g))return 'sport';if(/kids|اطفال|أطفال|cartoon|anime|كرتون|سبيس تون/.test(g))return 'anime';if(/news|اخبار|أخبار|جزيرة|arabiya/.test(g))return 'natural';return 'vivid'}
+  return 'natural'}
+const picKey=()=>{const k=S.settings.pic||'auto';return k==='auto'?picAuto():(PIC[k]?k:'natural')};
+const picIdx=()=>Math.max(0,Object.keys(PIC).indexOf(picKey()));
+function picOf(){return PIC[picKey()]||PIC.natural}
 const ENH_NAMES=()=>({auto:L('تلقائي','Auto'),off:L('إيقاف','Off'),normal:L('عادي','Normal'),strong:L('قوي','Strong')});
 const MOTION_NAMES=()=>({off:L('إيقاف','Off'),light:L('خفيف','Light'),full:L('كامل','Full')});
 const motionOn=()=>S.settings.motion&&S.settings.motion!=='off';
@@ -756,7 +776,7 @@ const ENH={gl:null,ok:null,run:false,blocked:false,out:'',
     const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
     const mk=()=>{const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);return t};
     this.vt=mk();this.vt2=mk();this.ft=mk();this.fb=gl.createFramebuffer();this.gl=gl;this.fw=0;this.fh=0;return this.ok=true}catch(e){console.warn('enh',e);return this.ok=false}},
-  active(){if(S.vod&&isHdr(S.vod.it||S.vod))return false;return (!!enhLevel()||motionOn()||(S.settings.pic&&S.settings.pic!=='natural'))&&!this.blocked&&this.ok!==false&&enhForKind(S.vod?(S.vod.seriesKey?'series':'movie'):'live')},
+  active(){if(S.vod&&isHdr(S.vod.it||S.vod))return false;return (!!enhLevel()||motionOn()||(picKey()!=='natural'))&&!this.blocked&&this.ok!==false&&enhForKind(S.vod?(S.vod.seriesKey?'series':'movie'):'live')},
   hz:0,fps:0,iv:41.7,newFrame:false,haveFrame:false,t0:0,lastMT:-1,_rafT:0,_rafE:0,
   vfc(){const v=V();if(!v.requestVideoFrameCallback||this.vfcOn)return;this.vfcOn=true;const cb=(now,md)=>{this.newFrame=true;this.t0=performance.now();if(md&&this.lastMT>=0){const d=(md.mediaTime-this.lastMT)*1000/(v.playbackRate||1);if(d>5&&d<200)this.iv=this.iv*.7+d*.3}if(md)this.lastMT=md.mediaTime;this.fps=Math.round(1000/this.iv);v.requestVideoFrameCallback(cb)};v.requestVideoFrameCallback(cb)},
   reset(){this.blocked=false;this.out='';this.lastKey='';this.haveFrame=false;this.lastMT=-1;this.fps=0;$('#stage').classList.remove('enh')},
@@ -791,7 +811,8 @@ const enhName=()=>S.settings.enh==='auto'?autoEnhName():ENH_NAMES()[S.settings.e
 function cycleMotion(){const K=['off','light','full'];S.settings.motion=K[(K.indexOf(S.settings.motion||'off')+1)%3];saveSet();ENH.blocked=false;toast(L('تنعيم الحركة: ','Motion smoothing: ')+MOTION_NAMES()[S.settings.motion],1600);if(S.pm||S.vod)renderTop()}
 const motionItem=()=>({label:L('تنعيم الحركة: ','Motion smoothing: ')+MOTION_NAMES()[S.settings.motion||'off']+(ENH.hz?` (${arN(ENH.fps||'')}${ENH.fps?' ← ':''}${arN(ENH.hz)} ${L('هرتز','Hz')})`:''),act:cycleMotion,keep:true});
 function qBadge(){const r=srcRes();if(!r)return'';const on=$('#stage').classList.contains('enh')&&ENH.out;const hz=motionOn()&&ENH.hz&&ENH.fps?`<span class="qb on" title="${L('تنعيم الحركة','Motion smoothing')}">${arN(ENH.fps)} ${L('←','→')} ${arN(ENH.hz)} ${L('هرتز','Hz')}</span>`:(ENH.fps?`<span class="qb">${arN(ENH.fps)} ${L('إطار/ث','fps')}</span>`:'');
-  return (on&&enhLevel()?`<span class="qb on" title="${L('تحسين الصورة','Picture enhancement')}">✨ ${r} ${L('←','→')} ${arN(ENH.out)}</span>`:`<span class="qb">${r}</span>`)+hz}
+  const hdr=S.vod&&isHdr(S.vod.subItem||S.vod.it||S.vod)?`<span class="qb hdr">🌈 HDR</span>`:'';const pk=picKey();const pic=pk!=='natural'&&!hdr?`<span class="qb pic ${pk}">🎨 ${L(...PIC_N[pk])}${(S.settings.pic||'auto')==='auto'?' <i>'+L('تلقائي','auto')+'</i>':''}</span>`:'';
+  return `<span class="qb res">${r}</span>`+hdr+pic+(on&&enhLevel()&&!hdr?`<span class="qb on" title="${L('تحسين الصورة','Picture enhancement')}">✨ ${L('محسّن إلى','Enhanced to')} ${arN(ENH.out)}</span>`:'')+hz}
 
 /* ================= الرمز السري للمفضلة الخاصة ================= */
 function askPin(cb,mode,label){const m=$('#pinM'),b=$('#pinBody');const setup=mode==='set';const forSet=mode==='settings'||mode==='downloads';const forG=mode==='group';
@@ -1375,8 +1396,8 @@ function closeSide(){S.side=null;renderSide();showUI()}
 function openMenu(){openSide('menu',S.vod?vodMenu:liveMenu)}
 function menuBack(){const sd=S.side;if(sd&&sd.type==='menu'&&sd.stack.length>1){sd.stack.pop();sd.idx=0;renderSide()}else closeSide()}
 const enhItem=()=>({label:L('تحسين الصورة: ','Picture enhancement: ')+enhName(),act:cycleEnh,keep:true});
-const picName=()=>L(...PIC_N[S.settings.pic||'natural']);
-function picItems(){return PIC_K.map(k=>({label:L(...PIC_N[k]),on:(S.settings.pic||'natural')===k,act:()=>{S.settings.pic=k;saveSet();ENH.blocked=false;if(MOB&&window.NAT&&NAT.setPic)NAT.setPic({pic:picIdx()}).catch(()=>{});toast(L('🎨 وضع الصورة: ','🎨 Picture mode: ')+L(...PIC_N[k]),1500)}}))}
+const picName=()=>{const k=S.settings.pic||'auto';return k==='auto'?L('تلقائي','Auto')+' ('+L(...PIC_N[picKey()])+')':L(...PIC_N[k])};
+function picItems(){return PIC_K.map(k=>({label:L(...PIC_N[k]),on:(S.settings.pic||'auto')===k,act:()=>{S.settings.pic=k;saveSet();ENH.blocked=false;if(MOB&&window.NAT&&NAT.setPic)NAT.setPic({pic:picIdx()}).catch(()=>{});toast(L('🎨 وضع الصورة: ','🎨 Picture mode: ')+L(...PIC_N[k]),1500)}}))}
 const picItem=()=>({label:L('🎨 وضع الصورة: ','🎨 Picture mode: ')+picName(),sub:picItems});
 function liveMenu(){const ch=S.playing;const it=[enhItem(),picItem(),motionItem(),{label:L('الجودة','Quality'),sub:qualityItems},{label:L('المسارات الصوتية','Audio tracks'),sub:audioItems},{label:L('الترجمة','Subtitles')+(S.sub?' ✓':''),sub:subMenu},{label:L('نسبة العرض: ','Aspect: ')+aspectName(),act:cycleAspect,keep:true}];
   if(ch)it.push({label:S.favs.has(ch.key)?L('إزالة من المفضلة','Remove from favorites'):L('إضافة للمفضلة ★','Add to favorites ★'),act:()=>toggleFav(ch.key)});
@@ -1522,11 +1543,11 @@ const arRank=(a,b)=>arKind(b)-arKind(a);
 const onlyAr=()=>!!S.settings.onlyAr;
 function arSort(list){return list.map((x,i)=>[x,i]).sort((a,b)=>arKind(b[0])-arKind(a[0])||a[1]-b[1]).map(x=>x[0])}
 function vodGroups(kind){const arr=kind==='movies'?S.movies:S.series;const hid=hiddenSet(kind);const g4=arr.filter(x=>qualityOf(x).r===4).length;
-  const gs=[{id:'__cont',name:L('متابعة المشاهدة','Continue watching'),n:contList(kind).length},{id:'__fav',name:'★ '+L('المفضلة','Favorites'),n:arr.filter(x=>S.favs.has(x.key)&&visible(x)).length},...(hasPin()?[{id:'__pfav',name:'🕵️',n:S.unlocked?arr.filter(x=>S.pfavs.has(x.key)).length:''}]:[]),{id:'__new',name:L('أضيف حديثاً','Recently added'),n:''},{id:'__ar',name:'💬 '+L('عربي ومترجم','Arabic & subtitled'),n:arr.reduce((c,x)=>c+(arKind(x)>0&&!hid.has(x.group)&&visible(x)?1:0),0)}];
+  const gs=[{id:'__cont',name:L('متابعة المشاهدة','Continue watching'),n:contList(kind).length},{id:'__fav',name:'★ '+L('المفضلة','Favorites'),n:arr.filter(x=>S.favs.has(x.key)&&visible(x)).length},...(hasPin()?[{id:'__pfav',name:'🕵️',n:S.unlocked?arr.filter(x=>S.pfavs.has(x.key)).length:''},{id:'__hid',name:'🙈',n:S.unlocked&&hid.size?arN(hid.size):''}]:[]),{id:'__new',name:L('أضيف حديثاً','Recently added'),n:''},{id:'__ar',name:'💬 '+L('عربي ومترجم','Arabic & subtitled'),n:arr.reduce((c,x)=>c+(arKind(x)>0&&!hid.has(x.group)&&visible(x)?1:0),0)}];
   if(g4)gs.push({id:'__4k',name:L('جودة 4K','4K quality'),n:g4});
   return [...gs,{id:'__all',name:L('الكل','All'),n:arr.filter(x=>!hid.has(x.group)).length},...orderGroups(kind,groupsOf(arr)).filter(([g])=>!hid.has(g)).map(([g,n])=>({id:g,name:gName(kind,g),n,g}))]}
 function vodFiltered(kind){const arr=kind==='movies'?S.movies:S.series;const g=S.vodGroup[kind];const hid=hiddenSet(kind);let r;
-  if(g==='__pfav')r=S.unlocked?arr.filter(x=>S.pfavs.has(x.key)):[];else if(g==='__cont')r=contList(kind).filter(visible);else if(g==='__fav')r=arr.filter(x=>S.favs.has(x.key)&&visible(x));
+  if(g==='__pfav')r=S.unlocked?arr.filter(x=>S.pfavs.has(x.key)):[];else if(g==='__hid')r=S.unlocked?arr.filter(x=>hid.has(x.group)):[];else if(g==='__cont')r=contList(kind).filter(visible);else if(g==='__fav')r=arr.filter(x=>S.favs.has(x.key)&&visible(x));
   else if(g==='__new')r=arr.filter(x=>!hid.has(x.group)&&visible(x)).sort((a,b)=>(b.added||0)-(a.added||0)).slice(0,300);
   else if(g==='__4k')r=arr.filter(x=>qualityOf(x).r===4&&visible(x));
   else if(g==='__ar')r=arSort(arr.filter(x=>arKind(x)>0&&!hid.has(x.group)&&visible(x)));
@@ -1540,11 +1561,23 @@ function mergeDedupe(r){if(!mergeOn())return r;const seen=new Set();return r.fil
 function posterHTML(it,attr,foc){const r=it.kind==='movie'?S.resume[it.key]:null;const prog=r?(r.done?100:Math.round(r.pos/r.dur*100)):0;const t=it.title||it.name;
   const sr=it.kind==='series'?S.resume[it.key]:null;const sub=sr&&sr.season?SE(sr.season,sr.ep):(it.year?arN(it.year):'&nbsp;');const q=qualityOf(it);
   if(it.kind==='movie'&&it.url)queueProbe(it);const inCont=(S.screen==='movies'||S.screen==='series')&&S.vodGroup[S.screen]==='__cont'&&/data-p=/.test(attr);return `<div class="pc${foc?' foc':''}" ${attr} data-key="${esc(it.key)}"><div class="im">${inCont?`<span class="rmx" data-rmc="1" title="${L('حذف من متابعة المشاهدة','Remove from Continue watching')}">✕</span>`:''}<span class="ini">${initials(t)}</span>${it.logo?`<img src="${esc(it.logo)}" loading="lazy" alt="" onerror="this.remove()">`:''}${it.rating&&+it.rating?`<span class="rt">★ ${arN(it.rating)}</span>`:''}${(()=>{const rl=resLabel(it);return (rl?`<span class="q4 ${resCls(rl)}">${arN(rl)}</span>`:'')+hdrChip(it)})()}${(()=>{const k=arKind(it);return k===2?`<span class="arb a2">${L('عربي','Arabic')}</span>`:k===1?`<span class="arb a1">${L('مترجم','Subtitled')}</span>`:''})()}${S.favs.has(it.key)?'<span class="fv">★</span>':isPriv(it.key)?'<span class="fv">🔒</span>':''}${it.kind==='movie'?abHTML(it):''}${prog?`<div class="pr"><i style="width:${prog}%"></i></div>`:''}</div><div class="nm" title="${esc(it.name)}">${esc(t)}</div><div class="yr">${sub}</div></div>`}
+/* switch category without rebuilding the whole screen — keeps the list smooth */
+function selectVodGroup(kind,g){S.vodGroup[kind]=g;S.vf=0;const list=$('.vgl');if(!list||S.screen!==kind){renderVOD(kind);return}
+  list.querySelectorAll('.li').forEach(b=>b.classList.toggle('foc',b.dataset.vg===g));const fl=list.querySelector('.li.foc');if(fl)fl.scrollIntoView({block:'nearest',behavior:'smooth'});
+  const hb=$('#hidbar');if(hb)hb.outerHTML=hiddenBar(kind);else if(g==='__hid'){renderVOD(kind);return}
+  renderVGrid(kind)}
+function hiddenBar(kind){if(S.vodGroup[kind]!=='__hid')return '<span id="hidbar" hidden></span>';const hid=[...hiddenSet(kind)];const all=groupsOf(kind==='movies'?S.movies:S.series).map(([g])=>g).filter(g=>!hid.includes(g));
+  return `<div class="hidbar" id="hidbar"><div class="hbt"><span class="hbi">🙈</span><div><b>${L('العناصر المخفية','Hidden items')}</b><small>${L('الأقسام هنا ما تطلع في أي قائمة ولا في البحث إلا بالرمز السري.','Categories here never appear in lists or search without the PIN.')}</small></div></div>
+    <div class="hbl">${hid.length?hid.map(g=>`<span class="hchip">🙈 ${esc(g)}<button data-unhide="${esc(g)}" title="${L('إظهار','Unhide')}">✕</button></span>`).join(''):`<span class="sd">${L('ما فيه أقسام مخفية بعد','No hidden categories yet')}</span>`}</div>
+    <div class="hba"><select class="in" data-hidepick="1"><option value="">＋ ${L('إخفاء قسم كامل…','Hide a whole category…')}</option>${all.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('')}</select></div></div>`}
+function renderVGrid(kind){S.vlist=vodFiltered(kind);S.vf=Math.max(0,Math.min(S.vf||0,S.vlist.length-1));const g=$('#vgrid');if(!g){renderVOD(kind);return}
+  g.innerHTML='';g.scrollTop=0;S.vRendered=0;appendPosters();while(S.vRendered<=S.vf&&S.vRendered<S.vlist.length)appendPosters();
+  const f=g.querySelector('.pc.foc');if(f)f.scrollIntoView({block:'center'});paintHero(S.vlist[S.vf],null);heroFor(S.vlist[S.vf])}
 function renderVOD(kind){
   S.vlist=vodFiltered(kind);S.vf=Math.max(0,Math.min(S.vf||0,S.vlist.length-1));const gs=vodGroups(kind);
   $('#screen').innerHTML=`<div class="vs"><div class="vhero" id="vhero"></div><div class="vmain">
     <div class="vgroups"><div class="vsrch"><input id="vq" placeholder="${kind==='movies'?L('ابحث في الأفلام…','Search movies…'):L('ابحث في المسلسلات…','Search series…')}" value="${esc(S.vodSearch[kind])}"></div><select class="in vqf" data-vqf="1" title="${L('تصفية حسب الجودة','Filter by quality')}"><option value="">${L('كل الجودات','All qualities')}</option>${['4K','2K','1080p','720p','480p'].map(q=>`<option value="${q}" ${(S.vodQ||{})[kind]===q?'selected':''}>${arN(q)}</option>`).join('')}</select><button class="li vfb${vfCount(kind)?' on':''}" data-vfo="1"><span>🎚 ${L('فلتر: النوع، التقييم، الترجمة','Filter: genre, rating, subtitles')}</span><span class="c">${vfCount(kind)?arN(vfCount(kind)):''}</span></button>${VM.total?`<div class="vmp">${L('جاري جلب أنواع وتقييمات الأفلام من المزوّد','Fetching genres & ratings from the provider')} ${arN(VM.done)}/${arN(VM.total)}<i style="width:${VM.total?VM.done/VM.total*100:0}%"></i></div>`:''}<button class="li arf${onlyAr()?' on':''}" data-arf="1"><span>💬 ${L('العربي والمترجم بس','Arabic & subtitled only')}</span><span class="c">${onlyAr()?L('تشغيل','On'):L('إيقاف','Off')}</span></button><div class="vgl">${gs.map(g=>`<button class="li${g.id===S.vodGroup[kind]?' foc':''}" data-vg="${esc(g.id)}"><span>${esc(g.name)}</span>${g.g?`<i class="ga" data-gh="1" title="${L('إخفاء المجموعة','Hide group')}">🙈</i><i class="ga" data-gl="1" title="${L('قفل بالرمز السري','Lock with PIN')}">${isLockedG(kind,g.g)?'🔓':'🔒'}</i>`:''}<span class="c">${g.n!==''?arN(g.n):''}</span></button>`).join('')}</div></div>
-    <div class="vgrid" id="vgrid"></div></div></div>`;
+    <div class="vcol">${hiddenBar(kind)}<div class="vgrid" id="vgrid"></div></div></div></div>`;
   S.vRendered=0;appendPosters();while(S.vRendered<=S.vf&&S.vRendered<S.vlist.length)appendPosters();
   const g=$('#vgrid');g.addEventListener('scroll',()=>{if(g.scrollTop+g.clientHeight>g.scrollHeight-700)appendPosters()});
   const f=g.querySelector('.pc.foc');if(f)f.scrollIntoView({block:'center'});
@@ -1841,7 +1874,7 @@ function renderSetup(){const st=S.settings;const chip=(on,attr,txt)=>`<button cl
    <h4>🔊 ${L('لغة الصوت المفضلة','Preferred audio language')}</h4><div class="chips2">${chip(!st.audioLang,'data-su="audioLang:"',L('الأصلي','Original'))}${langs.slice(0,4).map(([v,a,e])=>chip(st.audioLang===v,`data-su="audioLang:${v}"`,L(a,e))).join('')}${chip(st.audioLang==='ja','data-su="audioLang:ja"',L('اليابانية','Japanese'))}</div>
    <div class="chips2" style="margin-top:8px">${chip(st.animeJa!==false,'data-su="tg:animeJa"',(st.animeJa!==false?'✓ ':'')+L('الأنمي: صوت ياباني + ترجمة عربية','Anime: Japanese audio + Arabic subtitles'))}</div>
    <h4>✨ ${L('تحسين الصورة','Picture enhancement')}</h4><div class="chips2">${[['auto',L('تلقائي (مستحسن)','Auto (recommended)')],['normal',L('عادي','Normal')],['strong',L('قوي','Strong')],['off',L('إيقاف','Off')]].map(([v,n])=>chip(st.enh===v,`data-su="enh:${v}"`,n)).join('')}</div>
-   <h4>🎨 ${L('وضع الصورة','Picture mode')}</h4><div class="chips2">${PIC_K.map(k=>chip((st.pic||'natural')===k,`data-su="pic:${k}"`,L(...PIC_N[k]))).join('')}</div>
+   <h4>🎨 ${L('وضع الصورة','Picture mode')}</h4><div class="chips2">${PIC_K.map(k=>chip((st.pic||'auto')===k,`data-su="pic:${k}"`,L(...PIC_N[k]))).join('')}</div>
    <div class="chips2" style="margin-top:8px">${[['enhLive',L('القنوات المباشرة','Live channels')],['enhMovies',L('الأفلام','Movies')],['enhSeries',L('المسلسلات','Series')]].map(([k,n])=>chip(st[k]!==false,`data-su="tg:${k}"`,(st[k]!==false?'✓ ':'')+n)).join('')}</div>
    <h4>🎬 ${L('القوائم','Lists')}</h4><div class="chips2">${chip(!!st.onlyAr,'data-su="tg:onlyAr"',(st.onlyAr?'✓ ':'')+L('اعرض العربي والمترجم بس','Show Arabic & subtitled only'))}</div>
    <div class="row3" style="display:flex;justify-content:flex-end;margin-top:20px"><button class="btn p" data-su="done">${L('حفظ وابدأ','Save & start')}</button></div></div>`}
@@ -1940,7 +1973,7 @@ function setContent(c){const P=pl();
     <div class="opt"><div class="f"><b>${L('تعديل وقت الدليل','Guide time shift')}</b><small>${L('إذا أوقات البرامج متقدمة أو متأخرة عن الواقع','If programme times are ahead of or behind real time')}</small></div><select class="in" data-sel="epgShift">${range(-12,12).map(h=>`<option value="${h}" ${+S.settings.epgShift===h?'selected':''}>${h>0?'+':''}${arN(h)} ${L('ساعة','h')}</option>`).join('')}</select></div>`}
   if(c==='play')return `<h3>${L('التشغيل والجودة','Playback & quality')}</h3>
     <div class="opt"><div class="f"><b>✨ ${L('تحسين الصورة ورفع الدقة','Picture enhancement & upscaling')}</b><small>${L('يرفع دقة الصورة لحد دقة شاشتك (حتى 4K) بفلتر ذكي على كرت الشاشة، ويزيد الحدة والوضوح والألوان. التفاصيل اللي مو موجودة في المصدر ما يقدر أي برنامج يخترعها، بس الفرق واضح في الأفلام والقنوات منخفضة الجودة.','Upscales the picture to your screen\'s resolution (up to 4K) with a GPU filter, and boosts sharpness, clarity and color. No app can invent detail that isn\'t in the source, but the difference is clear on lower-quality movies and channels.')}</small></div><select class="in" data-sel="enh">${Object.entries(ENH_NAMES()).map(([v,n])=>`<option value="${v}" ${S.settings.enh===v?'selected':''}>${n}</option>`).join('')}</select></div>
-    <div class="opt"><div class="f"><b>🎨 ${L('وضع الصورة','Picture mode')}</b><small>${L('مثل أوضاع التلفزيون: «زاهي» ألوان قوية وتباين عالي، «سينمائي» ألوان دافئة هادئة بإحساس السينما، «رياضة» حدة وحركة واضحة، «أنمي» ألوان مشبعة نظيفة، «ليلي» صورة أهدأ للعين بالظلام.','Like TV presets: “Vivid” punchy colors and contrast, “Cinematic” warm calm film look, “Sport” crisp detail, “Anime” clean saturated colors, “Night” easier on the eyes in the dark.')}</small></div><select class="in" data-sel="pic">${PIC_K.map(k=>`<option value="${k}" ${(S.settings.pic||'natural')===k?'selected':''}>${L(...PIC_N[k])}</option>`).join('')}</select></div>
+    <div class="opt"><div class="f"><b>🎨 ${L('وضع الصورة','Picture mode')}</b><small>${L('مثل أوضاع التلفزيون: «زاهي» ألوان قوية وتباين عالي، «سينمائي» ألوان دافئة هادئة بإحساس السينما، «رياضة» حدة وحركة واضحة، «أنمي» ألوان مشبعة نظيفة، «ليلي» صورة أهدأ للعين بالظلام.','Like TV presets: “Vivid” punchy colors and contrast, “Cinematic” warm calm film look, “Sport” crisp detail, “Anime” clean saturated colors, “Night” easier on the eyes in the dark.')}</small></div><select class="in" data-sel="pic">${PIC_K.map(k=>`<option value="${k}" ${(S.settings.pic||'auto')===k?'selected':''}>${L(...PIC_N[k])}</option>`).join('')}</select></div>
     <div class="opt"><div class="f"><b>🎞 ${L('تنعيم الحركة (إطارات وسيطة)','Motion smoothing (frame interpolation)')}</b><small>${L('الأفلام مسجلة بـ ٢٤ إطار في الثانية، وشاشتك تعرض ٦٠ أو ١٢٠ هرتز. هذا الخيار يولّد إطارات وسيطة بين إطارات الفيلم على كرت الشاشة عشان الحركة تصير أنعم وتملأ تردد الشاشة. «خفيف» أنعم من الأصل بدون أثر واضح، و«كامل» حركة سلسة جداً بس ممكن يطلع ظل خفيف في المشاهد السريعة.','Movies are 24 fps while your display runs at 60 or 120 Hz. This generates intermediate frames on the GPU so motion looks smoother and fills the display rate. “Light” is subtle; “Full” is very fluid but may ghost slightly in fast scenes.')}${ENH.hz?' '+L('شاشتك الحين: ','Your display now: ')+arN(ENH.hz)+' '+L('هرتز','Hz'):''}</small></div><select class="in" data-sel="motion">${Object.entries(MOTION_NAMES()).map(([v,n])=>`<option value="${v}" ${(S.settings.motion||'off')===v?'selected':''}>${n}</option>`).join('')}</select></div>
     <div class="opt"><div class="f"><b>🔊 ${L('لغة الصوت المفضلة','Preferred audio language')}</b><small>${L('إذا الفيلم فيه أكثر من مسار صوت، يختار هذي اللغة تلقائياً. مجموعات الأنمي دايماً تشتغل بالصوت الياباني مع ترجمة عربية (تقدر تحدد مجموعات الأنمي من «المجموعات»).','When a title has several audio tracks, this one is chosen automatically. Anime groups always play Japanese audio with Arabic subtitles (set anime groups under “Groups”).')}</small></div><select class="in" data-sel="audioLang"><option value="" ${!S.settings.audioLang?'selected':''}>${L('الأصلي (ما يغيّر)','Original (no change)')}</option>${[['ar','العربية','Arabic'],['en','الإنجليزية','English'],['ja','اليابانية','Japanese'],['tr','التركية','Turkish'],['fr','الفرنسية','French'],['hi','الهندية','Hindi'],['ko','الكورية','Korean']].map(([v,a,e])=>`<option value="${v}" ${S.settings.audioLang===v?'selected':''}>${L(a,e)}</option>`).join('')}</select></div>
     <div class="opt"><div class="f"><b>⚙️ ${L('الإعدادات الأولية','Initial setup')}</b><small>${L('لغة الترجمة والصوت وتحسين الصورة بخطوة وحدة','Subtitle & audio language and picture enhancement in one step')}</small></div><button class="btn" data-act="setup">${L('فتح','Open')}</button></div>
@@ -2130,19 +2163,20 @@ function bindStatic(){
     if(S.screen==='movies'||S.screen==='series'){const kind=S.screen;
       const vfo=e.target.closest('[data-vfo]');if(vfo){openVF(kind);return}
       const af=e.target.closest('[data-arf]');if(af){S.settings.onlyAr=!onlyAr();saveSet();S.vf=0;renderVOD(kind);toast(onlyAr()?L('💬 يعرض العربي والمترجم بس — في كل القوائم والبحث','💬 Showing Arabic & subtitled only — in every list and search'):L('يعرض كل الأفلام','Showing everything'),2200);return}
+      const uh=e.target.closest('[data-unhide]');if(uh){toggleHidden(kind,uh.dataset.unhide,false);renderVOD(kind);return}
       const vg=e.target.closest('[data-vg]');if(vg){const g=vg.dataset.vg;const gh=e.target.closest('[data-gh]'),gl=e.target.closest('[data-gl]');
-        if(gh&&!g.startsWith('__')){toggleHidden(kind,g,true);if(S.vodGroup[kind]===g)S.vodGroup[kind]='__all';toast(L('انخفت «'+g+'» — ترجعها من الإعدادات ← المجموعات','Hid “'+g+'” — restore it in Settings → Groups'),2500);renderVOD(kind);return}
+        if(gh&&!g.startsWith('__')){toggleHidden(kind,g,true);if(S.vodGroup[kind]===g)S.vodGroup[kind]='__all';toast(L('🙈 انخفى «'+g+'» — تلقاه في قسم 🙈 بالرمز السري','🙈 “'+g+'” hidden — find it under 🙈 with your PIN'),2500);renderVOD(kind);return}
         if(gl&&!g.startsWith('__')){if(toggleLock(kind,g)){if(S.vodGroup[kind]===g&&gLocked(kind,g))S.vodGroup[kind]='__all';renderVOD(kind)}return}
-        if(g==='__pfav'&&!S.unlocked){askPin(()=>{S.vodGroup[kind]='__pfav';S.vf=0;renderVOD(kind)});return}
+        if((g==='__pfav'||g==='__hid')&&!S.unlocked){askPin(()=>{S.unlocked=true;selectVodGroup(kind,g)});return}
         if(!g.startsWith('__')&&gLocked(kind,g)){askPin(()=>{S.gOpen.add(gKey(kind,g));S.vodGroup[kind]=g;S.vf=0;renderVOD(kind)},'group',g);return}
-        S.vodGroup[kind]=g;S.vf=0;renderVOD(kind);return}
+        selectVodGroup(kind,g);return}
       const rmc=e.target.closest('[data-rmc]');if(rmc){const pc2=rmc.closest('[data-p]');const it=S.vlist[+pc2.dataset.p];if(it){removeCont(it);renderVOD(kind)}return}
       const pc=e.target.closest('[data-p]');if(pc){openDetail(S.vlist[+pc.dataset.p]);return}}
   });
   scr.addEventListener('dblclick',e=>{if(S.screen==='tv'&&e.target.closest('[data-cc],.pg.now,.pg.empty')&&S.playing&&!S.pm)enterPM()});
   scr.addEventListener('mouseover',e=>{if(S.screen!=='movies'&&S.screen!=='series')return;const pc=e.target.closest('.pc[data-p]');if(!pc)return;const i=+pc.dataset.p;if(i!==S.vf)setVF(i,true)});
   scr.addEventListener('input',debounce(e=>{if(e.target.id==='vq'){const kind=S.screen;S.vodSearch[kind]=e.target.value;S.vlist=vodFiltered(kind);S.vf=0;S.vRendered=0;$('#vgrid').innerHTML='';appendPosters()}},250));
-  scr.addEventListener('change',e=>{if(S.screen==='settings')settingsChange(e);const mv=e.target.closest('[data-dlmv]');if(mv){dlMoveTo(mv.dataset.dlmv,mv.value);return}if(S.screen==='ai'){aiChange(e);return}const qf=e.target.closest('[data-vqf]');if(qf&&(S.screen==='movies'||S.screen==='series')){S.vodQ=S.vodQ||{};S.vodQ[S.screen]=qf.value;S.vf=0;renderVOD(S.screen)}});
+  scr.addEventListener('change',e=>{if(S.screen==='settings')settingsChange(e);const mv=e.target.closest('[data-dlmv]');if(mv){dlMoveTo(mv.dataset.dlmv,mv.value);return}if(S.screen==='ai'){aiChange(e);return}const hp=e.target.closest('[data-hidepick]');if(hp&&(S.screen==='movies'||S.screen==='series')){if(hp.value){toggleHidden(S.screen,hp.value,true);renderVOD(S.screen)}return}const qf=e.target.closest('[data-vqf]');if(qf&&(S.screen==='movies'||S.screen==='series')){S.vodQ=S.vodQ||{};S.vodQ[S.screen]=qf.value;S.vf=0;renderVOD(S.screen)}});
   const st=$('#stage');
   st.addEventListener('click',e=>{
     const a=e.target.closest('[data-a]');if(a){e.stopPropagation();stageAct(a.dataset.a);if(S.pm||S.vod)showUI();return}
