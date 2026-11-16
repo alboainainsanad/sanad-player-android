@@ -12,6 +12,9 @@
 <style>
 :root{--bg:#0a0c0f;--p1:#101317;--p2:#161a20;--p3:#1f242c;--p4:#2a3039;--ln:#232931;--tx:#eef1f5;--mu:#8b95a3;--mu2:#5c6674;--ac:#4a90ff;--foc:#e8ecf1;--gold:#f5c518;--red:#ff4d4d;--ok:#3ccf7a;--CHW:280px;--rail:68px}
 
+/* remote focus ring */
+.tvf:focus,button:focus-visible,.srow:focus-visible,.atile:focus-visible{outline:none;box-shadow:0 0 0 3px var(--foc),0 0 18px color-mix(in srgb,var(--foc) 60%,transparent)!important;position:relative;z-index:2}
+.t10c:focus-visible,.t10c.tvf{transform:translateY(-3px)}
 /* TOP 10 strip */
 .top10{margin:4px 12px 0;padding:10px 14px 8px;border-radius:16px;background:var(--p1);border:1px solid var(--ln);flex-shrink:0}
 .t10h{display:flex;align-items:center;gap:12px;margin-bottom:8px}.t10h b{font-size:17px;font-weight:900;letter-spacing:1px}.t10h b span{background:linear-gradient(90deg,#ffd166,#ff2bd6);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:20px}.t10s{color:var(--mu);font-size:13px}
@@ -1594,7 +1597,7 @@ function top10(kind){const g=S.vodGroup[kind];if(['__cont','__fav','__pfav','__h
   return r.slice(0,10)}
 function top10Html(kind){const list=top10(kind);if(!list.length&&(S.settings.top10p||'all')==='all')return '<span id="top10" hidden></span>';if(['__cont','__fav','__pfav','__hid'].includes(S.vodGroup[kind]))return '<span id="top10" hidden></span>';const f=vfOf(kind);const sn={'':L('الأعلى تقييماً','Top rated'),rating:L('الأعلى تقييماً','Top rated'),new:L('الأحدث إضافة','Newest'),year:L('الأحدث إنتاجاً','Newest releases'),ar:L('العربي أولاً','Arabic first')}[f.sort||'']||'';const per=S.settings.top10p||'all';
   return `<div class="top10" id="top10"><div class="t10h"><b>🏆 TOP <span>10</span></b><span class="t10s">${sn}</span><span style="flex:1"></span><div class="t10p">${T10P().map(([k,n])=>`<button class="${per===k?'on':''}" data-t10p="${k}">${n}</button>`).join('')}</div></div>
-    <div class="t10r">${!list.length?`<span class="sd" style="padding:10px 4px">${L('ما أضيف شي جديد في هذي الفترة','Nothing added in this period')}</span>`:''}${list.map((it,i)=>`<div class="t10c" data-t10="${esc(it.key)}"><span class="num">${arN(i+1)}</span><div class="im">${it.logo?`<img src="${esc(it.logo)}" loading="lazy" alt="" onerror="this.remove()">`:`<span class="ini">${initials(it.title||it.name)}</span>`}${ratingOf(it)?`<span class="rt">★ ${arN(ratingOf(it).toFixed(1))}</span>`:''}</div><small>${esc(it.title||it.name)}</small></div>`).join('')}</div></div>`}
+    <div class="t10r">${!list.length?`<span class="sd" style="padding:10px 4px">${L('ما أضيف شي جديد في هذي الفترة','Nothing added in this period')}</span>`:''}${list.map((it,i)=>`<div class="t10c" tabindex="0" data-t10="${esc(it.key)}"><span class="num">${arN(i+1)}</span><div class="im">${it.logo?`<img src="${esc(it.logo)}" loading="lazy" alt="" onerror="this.remove()">`:`<span class="ini">${initials(it.title||it.name)}</span>`}${ratingOf(it)?`<span class="rt">★ ${arN(ratingOf(it).toFixed(1))}</span>`:''}</div><small>${esc(it.title||it.name)}</small></div>`).join('')}</div></div>`}
 function renderVGrid(kind){S.vlist=vodFiltered(kind);S.vf=Math.max(0,Math.min(S.vf||0,S.vlist.length-1));const g=$('#vgrid');if(!g){renderVOD(kind);return}const t=$('#top10');if(t)t.outerHTML=top10Html(kind);
   g.innerHTML='';g.scrollTop=0;S.vRendered=0;appendPosters();while(S.vRendered<=S.vf&&S.vRendered<S.vlist.length)appendPosters();
   const f=g.querySelector('.pc.foc');if(f)f.scrollIntoView({block:'center'});paintHero(S.vlist[S.vf],null);heroFor(S.vlist[S.vf])}
@@ -2229,14 +2232,29 @@ function bindStatic(){
   document.addEventListener('fullscreenchange',()=>setTimeout(placeStage,50));
   document.addEventListener('keydown',e=>{if($('#cmp').classList.contains('show')){if(e.key==='Escape')cmpClose();else if(e.key===' '){e.preventDefault();const a=$('#cmp .after');a.paused?a.play():a.pause()}return}
     if(S.autoMuted){V().muted=false;S.autoMuted=false}
-    if($('.mbg.show')){if(e.key==='Escape')$$('.mbg.show').forEach(m=>m.classList.remove('show'));return}
-    const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)){if(e.key==='Escape'||(e.key==='Enter'&&ae.id==='vq'))ae.blur();return}
+    if($('.mbg.show')){if(e.key==='Escape')$$('.mbg.show').forEach(m=>m.classList.remove('show'));else if(/^Arrow/.test(e.key)&&!/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'')){if(snMove(e.key))e.preventDefault()}return}
+    const ae=document.activeElement;if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)){if(e.key==='Escape'||(e.key==='Enter'&&ae.id==='vq'))ae.blur();else if((e.key==='ArrowDown'||e.key==='ArrowUp')&&ae.tagName!=='SELECT'&&ae.tagName!=='TEXTAREA'&&!['tv','movies','series'].includes(S.screen)){if(snMove(e.key))e.preventDefault()}return}
     if(S.pm||S.vod){pmKey(e);return}
     if(S.screen==='tv'&&S.live.length){tvKey(e);return}
     if(S.screen==='movies'||S.screen==='series'){vodKey(e);return}
     if((S.screen==='detail'||S.screen==='actor')&&(e.key==='Escape'||e.key==='Backspace')){e.preventDefault();back();return}
+    if(/^Arrow/.test(e.key)){if(snMove(e.key))e.preventDefault();return}
     if(e.key==='/'&&S.screen!=='search'){e.preventDefault();go('search')}});
 }
+/* ===== TV remote: spatial D-pad navigation for any screen / dialog without its own key handling ===== */
+const SN_SEL='button,input,select,textarea,a[href],[tabindex]:not([tabindex="-1"])';
+function snScope(){const m=[...document.querySelectorAll('.mbg.show')].pop();return m||document}
+function snCands(){return [...snScope().querySelectorAll(SN_SEL)].filter(el=>{if(el.disabled||el.closest('[hidden]'))return false;const r=el.getBoundingClientRect();if(r.width<4||r.height<4)return false;const cs=getComputedStyle(el);return cs.visibility!=='hidden'&&cs.display!=='none'})}
+function snFocus(el){if(!el)return;document.querySelectorAll('.tvf').forEach(x=>x.classList.remove('tvf'));el.classList.add('tvf');el.focus({preventScroll:true});el.scrollIntoView({block:'nearest',inline:'nearest',behavior:'smooth'})}
+function snMove(dir){const c=snCands();if(!c.length)return false;let cur=document.activeElement;const scr=S.screen+'|'+(S.setCat||'')+'|'+!!document.querySelector('.mbg.show');if(S._snScr!==scr){S._snScr=scr;cur=null}
+  if(!cur||!c.includes(cur)){snFocus(snScope().querySelector('.bt.p,.btn.p')&&c.includes(snScope().querySelector('.bt.p,.btn.p'))?snScope().querySelector('.bt.p,.btn.p'):c.find(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.top<innerHeight})||c[0]);return true}
+  const a=cur.getBoundingClientRect(),ax=a.left+a.width/2,ay=a.top+a.height/2;let best=null,bd=1e9;
+  const inRail=!!cur.closest('#rail'),vert=dir==='ArrowUp'||dir==='ArrowDown';
+  for(const el of c){if(el===cur)continue;if(vert&&!inRail&&el.closest('#rail'))continue;if(vert&&inRail&&!el.closest('#rail'))continue;const b=el.getBoundingClientRect(),bx=b.left+b.width/2,by=b.top+b.height/2;
+    let main,orth;if(dir==='ArrowRight'){if(b.left<a.right-a.width*.5)continue;main=b.left-a.right;orth=Math.abs(by-ay)}else if(dir==='ArrowLeft'){if(b.right>a.left+a.width*.5)continue;main=a.left-b.right;orth=Math.abs(by-ay)}
+    else if(dir==='ArrowDown'){if(b.top<a.bottom-a.height*.5)continue;main=b.top-a.bottom;orth=Math.abs(bx-ax)}else{if(b.bottom>a.top+a.height*.5)continue;main=a.top-b.bottom;orth=Math.abs(bx-ax)}
+    const d=Math.max(0,main)+orth*2.2;if(d<bd){bd=d;best=el}}
+  if(best){snFocus(best);return true}return false}
 function tick(){const c=$('#clk');if(c)c.textContent=fmtT(Date.now())}
 function minuteTick(){const now=Date.now();
   if(S.screen==='tv'&&!S.pm&&S.live.length){if(S.gFocusT==null&&now>S.gT+SPAN-1800e3)S.gT=floor30(now)-1800e3;renderGrid(true);renderHero()}
@@ -2317,6 +2335,7 @@ if(MOB){(function(){
     const mb=document.querySelector('.mbg.show');if(mb){mb.classList.remove('show');return}
     if(S.side){closeSide();return}
     if(S.pm){exitPM();return}
+    if(S.screen==='settings'&&S.setCat&&S.setCat!=='home'){S.setCat='home';renderSettings();return}
     if(S.stack&&S.stack.length){back();return}
     if(S.screen!=='tv'){go('tv');return}
     APP.minimizeApp()});

@@ -10,7 +10,8 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true"
         android:hardwareAccelerated="true"
-        android:largeHeap="true">
+        android:largeHeap="true"
+        android:banner="@drawable/tv_banner">
 
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
@@ -24,6 +25,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
 
         </activity>
@@ -45,6 +47,10 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
     </application>
+
+    <!-- Android TV / Google TV (Hisense, TCL, Sony…) -->
+    <uses-feature android:name="android.software.leanback" android:required="false" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
     <!-- Permissions -->
 
